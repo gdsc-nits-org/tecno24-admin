@@ -30,20 +30,20 @@ const accordionData = [
 ];
 
 //downloadCsv
-const jsonToCSV = (data: any[]): string => {
-    const headers = Object.keys(data[0]);
-    const csvRows = [headers.join(',')];
+// const jsonToCSV = (data: any[]): string => {
+//     const headers = Object.keys(data[0]);
+//     const csvRows = [headers.join(',')];
   
-    for (const row of data) {
-      const values = headers.map(header => {
-        const value = row[header];
-        return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
-      });
-      csvRows.push(values.join(','));
-    }
+//     for (const row of data) {
+//       const values = headers.map(header => {
+//         const value = row[header];
+//         return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+//       });
+//       csvRows.push(values.join(','));
+//     }
   
-    return csvRows.join('\n');
-  };
+//     return csvRows.join('\n');
+//   };
 //   const downloadCSV = async () => {
 //     try {
 //       const response = await fetch('/api/get-teams'); // Adjust the API endpoint
@@ -67,7 +67,7 @@ const jsonToCSV = (data: any[]): string => {
 //     }
 //   };
 
-const Event = ({ params }: { params: eventParams }) => {
+const Event = ({params}: { params: eventParams }) => {
     console.log(params.id);
     return (
         <>
