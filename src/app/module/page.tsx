@@ -4,5 +4,6 @@ const Module=()=>{
             Module Page
         </>
     );
+    
 }
 export default Module;
