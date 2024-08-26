@@ -44,8 +44,8 @@ const Module=({params}:{params:moduleParams})=>{
                     <h1 className='text-[2rem]'>{module}</h1>
                 </div>
                 <div className='flex flex-wrap items-center'>
-                    {events.map((item)=>
-                        <Link href={item.destination} className="m-4">
+                    {events.map((item,i)=>
+                        <Link href={item.destination} key = {i} className="m-4">
                             <Card className='p-[1rem] bg-[transparent]'>
                                 <CardHeader className="text-[#ffffff]">{item.name}</CardHeader>
                                 <CardDescription>

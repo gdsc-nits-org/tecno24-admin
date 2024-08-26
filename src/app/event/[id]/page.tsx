@@ -76,8 +76,8 @@ const Event = ({params}: { params: eventParams }) => {
                 <div className="flex flex-row justify-center items-center w-screen text-4xl font-mono font-bold uppercase py-8 my-10"> Robowar </div>
                 <div className="flex flex-col justify-center items-center w-screen py-10 my-5">
                     <Accordion type="single" collapsible className="w-1/3 py-0 flex flex-col gap-3">
-                        {accordionData.map((item) => (
-                            <AccordionItem key={item.id} value={item.id}>
+                        {accordionData.map((item,i) => (
+                            <AccordionItem key={i} value={item.id}>
                                 <AccordionTrigger>{item.trigger}</AccordionTrigger>
                                 <AccordionContent>{item.content}</AccordionContent>
                             </AccordionItem>
