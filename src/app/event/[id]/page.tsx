@@ -11,6 +11,7 @@ interface eventParams {
     id: string
 }
 
+export const runtime = "edge";
 const accordionData = [
     {
         id: 'item-1',
