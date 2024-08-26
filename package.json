@@ -10,6 +10,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@radix-ui/react-popover": "^1.1.1",
     "@t3-oss/env-nextjs": "^0.10.1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -39,6 +40,5 @@
   },
   "ct3aMetadata": {
     "initVersion": "7.37.0"
-  },
-  "packageManager": "pnpm@9.7.0"
+  }
 }
