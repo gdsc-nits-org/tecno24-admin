@@ -19,7 +19,7 @@ import Link from "next/link";
 interface moduleParams{
     id:string
 }
-
+export const runtime = "edge";
 const Module=({params}:{params:moduleParams})=>{
     const [module,setModule]=useState("My module");
     const [events,setEvents]=useState([
@@ -27,13 +27,13 @@ const Module=({params}:{params:moduleParams})=>{
             id:1,
             name:"Event 1",
             description:"Some Description About Event",
-            destination:"/event/1234"
+            destination:"/event/1"
         },
         {
             id:2,
             name:"Event 2",
             description:"Some Description About Event 2",
-            destination:"/event/4567"
+            destination:"/event/2"
         }
     ]);
     const [neweventtype,setNeweventype]=useState("solo");
