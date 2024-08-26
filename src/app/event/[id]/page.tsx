@@ -1,5 +1,8 @@
 'use client';
-const Event=({params}:{params:any})=>{
+interface eventParams{
+    id:string
+}
+const Event=({params}:{params:eventParams})=>{
     console.log(params.id);
     return(
         <>

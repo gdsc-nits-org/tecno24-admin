@@ -1,4 +1,9 @@
-const Module=({params}:{params:any})=>{
+"use client";
+interface moduleParams{
+    id:string
+}
+
+const Module=({params}:{params:moduleParams})=>{
     return(
         <>{params.id}</>
     );
