@@ -33,6 +33,6 @@ const Module=({params}:{params:moduleParams})=>{
                 </div>
             </div>
         </div>
-    );
-}
+      );
+ }
 export default Module;
