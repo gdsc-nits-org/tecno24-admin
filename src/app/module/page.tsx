@@ -1,5 +1,5 @@
 "use client";
-import {useState} from "react";
+import {useState, useReducer} from "react";
 import Link from "next/link";
 import axios from "axios";
 import {
@@ -7,6 +7,42 @@ import {
     PopoverContent,
     PopoverTrigger,
   } from "../../components/ui/popover";
+import { Button } from "~/components/ui/button";
+
+interface createModuleReqParams {
+    description: string, 
+    coverImage: string, 
+    iconImage: string,
+    name: string, 
+    thirdPartyURL: string
+}
+
+const initialCreateModuleReqState = {
+    description: "", 
+    coverImage: "https://coverImage.png", 
+    iconImage: "https://iconImage.png",
+    name: "", 
+    thirdPartyURL: ""
+}
+
+type ACTION =
+  | { type: 'SET_MODULE_DESC'; payload: string }
+  | { type: 'SET_MODULE_NAME'; payload: string }
+  | { type: 'SET_MODULE_TP_URL'; payload: string };
+
+function createModuleParamsReducer(state: createModuleReqParams, action: ACTION): createModuleReqParams {
+    switch (action.type) {
+      case 'SET_MODULE_DESC':
+        return { ...state, description: action.payload };
+      case 'SET_MODULE_NAME':
+        return { ...state, name: action.payload };
+      case 'SET_MODULE_TP_URL':
+        return { ...state, thirdPartyURL: action.payload };
+      default:
+        return state;
+    }
+  }
+
 const Module=()=>{
     const [mods,setMods]=useState([
         {
@@ -20,32 +56,20 @@ const Module=()=>{
             destination:"/module/2"
         }
     ]);
-    const [name,setName]=useState("ewfdew");
-    const [description,setDescription]=useState("wefw");
-
-    const [iconImage,setIconImage]=useState("efew");
-    const [coverImage,setCoverImage]=useState("efewf");
-    const [thirdPartyURL,setThirdPartyURL]=useState("fewfew");
-    const createModule=async (e: any)=>{
-        e.preventDefault();
-        try{
-                const createMod=await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/module/create`,{
-                    name:name,
-                    description:description,
-                    iconImage:iconImage,
-                    coverImage:coverImage,
-                    thirdPartyURL:thirdPartyURL
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer 1000000` // Add your token here
-                    }
+    const [createModuleReqState, dispatchCreateModuleReqState] = useReducer(createModuleParamsReducer, initialCreateModuleReqState)
+    const createModule = async() => {
+        try {
+            const payload = createModuleReqState
+            console.log(payload)
+            const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/module/create`, payload, {
+                headers: {
+                    Authorization: `Bearer 1000000`
                 }
-                );
-
-        }
-        catch (error) {
-            console.error(error);
+            }
+            );
+            console.log(res)
+        }catch(e) {
+            console.log(e)
         }
     }
     return(
@@ -70,17 +94,34 @@ const Module=()=>{
                         <PopoverContent className="w-80">
                             <div className="flex flex-col">
                                 <label>Module Name</label>
-                                <input type="text" onChange={(e)=>setName(e.target.value)} value={name}  />
+                                <input type="text" className="mb-2 text-slate-900" onChange={(e)=> {
+                                    dispatchCreateModuleReqState({
+                                        type: "SET_MODULE_NAME",
+                                        payload: e.target.value
+                                    })
+                                }} />
                             </div>
                             <div className="flex flex-col">
                                 <label>Module Description</label>
-                                <input type="text" onChange={(e)=>setDescription(e.target.value)} value={description}  />
+                                <input type="text" className="mb-2 text-slate-900" onChange={(e)=> {
+                                    dispatchCreateModuleReqState({
+                                        type: "SET_MODULE_DESC",
+                                        payload: e.target.value
+                                    })
+                                }} />
                             </div>
                             <div className="flex flex-col">
                                 <label>Third Party URL</label>
-                                <input type="text" onChange={(e)=>setThirdPartyURL(e.target.value)} value={thirdPartyURL}  />
+                                <input type="text" className="mb-2 text-slate-900" onChange={(e)=> {
+                                    dispatchCreateModuleReqState({
+                                        type: "SET_MODULE_TP_URL",
+                                        payload: e.target.value
+                                    })
+                                }}/>
                             </div>
-                            <button onClick={createModule}>Create Module</button>
+                            <Button onClick={createModule}>
+                                Create Module
+                            </Button>
                         </PopoverContent>
                     </Popover>
             </div>
