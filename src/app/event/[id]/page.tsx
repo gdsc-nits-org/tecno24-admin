@@ -31,42 +31,42 @@ const accordionData = [
 ];
 
 //downloadCsv
-// const jsonToCSV = (data: any[]): string => {
-//     const headers = Object.keys(data[0]);
-//     const csvRows = [headers.join(',')];
+const jsonToCSV = (data: any[]): string => {
+    const headers = Object.keys(data[0]);
+    const csvRows = [headers.join(',')];
   
-//     for (const row of data) {
-//       const values = headers.map(header => {
-//         const value = row[header];
-//         return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
-//       });
-//       csvRows.push(values.join(','));
-//     }
+    for (const row of data) {
+      const values = headers.map(header => {
+        const value = row[header];
+        return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+      });
+      csvRows.push(values.join(','));
+    }
   
-//     return csvRows.join('\n');
-//   };
-//   const downloadCSV = async () => {
-//     try {
-//       const response = await fetch('/api/get-teams'); // Adjust the API endpoint
-//       if (!response.ok) {
-//         throw new Error('Network response was not ok');
-//       }
+    return csvRows.join('\n');
+  };
+  const downloadCSV = async () => {
+    try {
+      const response = await fetch('https://api.github.com/users'); // Adjust the API endpoint
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
   
-//       const jsonData = await response.json();
-//       const csvData = jsonToCSV(jsonData);
+      const jsonData = await response.json();
+      const csvData = jsonToCSV(jsonData);
   
-//       const blob = new Blob([csvData], { type: 'text/csv' });
-//       const url = window.URL.createObjectURL(blob);
-//       const link = document.createElement('a');
-//       link.href = url;
-//       link.setAttribute('download', 'teams.csv');
-//       document.body.appendChild(link);
-//       link.click();
-//       document.body.removeChild(link);
-//     } catch (error) {
-//       console.error('Error downloading the CSV:', error);
-//     }
-//   };
+      const blob = new Blob([csvData], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'Teams.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading the CSV:', error);
+    }
+  };
 
 const Event = ({params}: { params: eventParams }) => {
     console.log(params.id);
@@ -84,7 +84,7 @@ const Event = ({params}: { params: eventParams }) => {
                         ))}
                     </Accordion>
                 </div>
-                <Button className="w-35 text-lg  font-mono font-bold" variant="outline">Download</Button>
+                <Button  onClick = {downloadCSV} className="w-35 text-lg  font-mono font-bold" variant="outline">Download</Button>
             </main>
         </>
     );
