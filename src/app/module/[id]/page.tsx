@@ -65,7 +65,7 @@ const Module=({params}:{params:moduleParams})=>{
         }
     ]);
     const [neweventtype,setNeweventype]=useState("solo");
-    const createEvent=async(e:any)=>{
+    const createEvent=async(e: React.FormEvent<HTMLButtonElement>)=>{
         e.preventDefault();
         try{
             console.log("Start");

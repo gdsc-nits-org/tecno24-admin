@@ -14,7 +14,7 @@ import { Button } from "~/components/ui/button";
 interface eventParams {
     id: string
 }
-
+export const runtime = "edge";
 const tablesData = [
     {
         id: 1,

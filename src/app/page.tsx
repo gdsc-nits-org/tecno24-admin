@@ -11,16 +11,16 @@ export default function HomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    const checkUserFirstTime = async () => {
+    const checkUserFirstTime = () => {
       if (user) {
         try {
           const metadata = user.user.metadata;
           const isFirstTime = metadata.creationTime === metadata.lastSignInTime;
 
           if (isFirstTime) {
-            router.push('/form');
+             router.push('/form');
           } else {
-            router.push('/dashboard'); 
+             router.push('/dashboard'); 
           }
         } catch (error) {
           console.error('Error checking user:', error);
