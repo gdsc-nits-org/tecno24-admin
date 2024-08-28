@@ -39,6 +39,43 @@ interface Team {
 interface EventParams {
     id: string;
 }
+interface module{
+    id:string,
+    name:string,
+    description:string,
+    iconImage:string,
+    coverImage:string,
+    thirdPartyURL:string
+}
+interface event{
+    id: string,
+    name: string,
+    posterImage: string,
+    maxTeamSize: number,
+    minTeamSize: number,
+    attendanceIncentive: number,
+    registrationIncentive: number,
+    prizeDescription: string,
+    stagesDescription: string,
+    description: string,
+    venue: string,
+    lat: string,
+    lng: string,
+    registrationStartTime:string,
+    registrationEndTime: string,
+    extraQuestions: [
+    {}
+    ],
+    module: module
+}
+interface GetApiName{
+    status: string,
+    msg: event
+}
+interface GetApiTeam{
+    status: string,
+    msg: Team []
+}
 const jsonToCSV = (data: Record<string, string | number>[]): string => {
     if (data.length === 0) return '';
     const headers = data[0] ? Object.keys(data[0]) : [];
@@ -63,16 +100,16 @@ const Event = ({ params }: { params: EventParams }) => {
         // console.log(params.id)
         const fetchTeams = async () => {
             try {
-                const name = await axios.get(`${env.NEXT_PUBLIC_API_URL}/api/event/${params.id}`)
-                const response = await axios.get(`${env.NEXT_PUBLIC_API_URL}/api/team/event/${params.id}/registered_teams`,
+                const name = await axios.get<GetApiName>(`${env.NEXT_PUBLIC_API_URL}/api/event/${params.id}`)
+                const response = await axios.get<GetApiTeam>(`${env.NEXT_PUBLIC_API_URL}/api/team/event/${params.id}/registered_teams`,
                     {
                         headers: {
                             'Authorization': `Bearer 1000000`
                         }
                     })
-                console.log(response.data.msg)
-                setTeams(response.data.msg);
-                setName(name.data.msg.name);
+                // console.log(response.data.msg)
+                setTeams(response?.data.msg);
+                setName(name?.data?.msg?.name);
             } catch (error) {
                 console.error("Error fetching team data:", error);
             }
@@ -92,7 +129,7 @@ const Event = ({ params }: { params: EventParams }) => {
             "College Name": "College Name"
         }];
 
-        const filteredData = teams.flatMap((team, teamIndex) => {
+        const filteredData = teams?.flatMap((team, teamIndex) => {
             // Add a row for the team index
             const teamHeader = [{
                 "Sl No.": `Team ${teamIndex + 1}`,
@@ -104,7 +141,7 @@ const Event = ({ params }: { params: EventParams }) => {
             }];
 
             // Add members of the team
-            const teamMembers = team.members.map((member, memberIndex) => ({
+            const teamMembers = team?.members.map((member, memberIndex) => ({
                 "Sl No.": memberIndex + 1,
                 "Team Name": '',
                 "Name": `${member.firstName} ${member.middleName ? member.middleName + ' ' : ''}${member.lastName}`,
