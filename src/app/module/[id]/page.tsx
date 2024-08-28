@@ -215,32 +215,18 @@ const Module=({ params }:{ params: moduleParams })=>{
     const [neweventtype,setNeweventype]=useState("solo");
     return(
         <div className='bg-[#000000] text-[#ffffff] min-h-[100vh] flex flex-col items-center justify-start'>
-            <div className='w-[50vw] text-center'>
+            <div className='w-[50vw] text-center flex flex-wrap items-center justify-center'>
                 <div className='pt-[4rem]'>
                     <h1 className='text-[2rem]'>{modName} </h1>
                 </div>
-                <div className='flex flex-wrap items-center'>
-                    {/* {events?.map((item,i)=>{
-                    return(
-                            <Link href={item.destination} key = {i} className="m-4">
-                                <Card className='p-[1rem] bg-[transparent]'>
-                                    <CardHeader className="text-[#ffffff]">{item.name}</CardHeader>
-                                    <CardDescription>
-                                        {item.description}
-                                    </CardDescription>
-                                </Card>
-                            </Link>
-                            )
-                            }
-                        )
-                    } */}
+                <div className='flex flex-wrap items-center justify-center gap-5'>
                    { 
                         events?.map((event) => {
                             return (
                                 <Link href={`/event/${event.id}`} key={event.id}>
-                                    <div className="flex flex-col" >
-                                        {event.name}
-                                        {event.description}
+                                    <div className="flex flex-col p-[3rem] border-2" >
+                                        <h2>{event.name}</h2>
+                                        <h4>{event.description}</h4>
                                     </div>
                                 </Link>
                             )
