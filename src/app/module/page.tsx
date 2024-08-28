@@ -2,13 +2,15 @@
 "use client";
 import {useState, useReducer} from "react";
 import Link from "next/link";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
   } from "../../components/ui/popover";
 import { Button } from "~/components/ui/button";
+import { env } from "~/env";
+import { toast } from "sonner";
 
 interface createModuleReqParams {
     description: string, 
@@ -29,7 +31,8 @@ const initialCreateModuleReqState = {
 type ACTION =
   | { type: 'SET_MODULE_DESC'; payload: string }
   | { type: 'SET_MODULE_NAME'; payload: string }
-  | { type: 'SET_MODULE_TP_URL'; payload: string };
+  | { type: 'SET_MODULE_TP_URL'; payload: string }
+  | { type: 'INIT'; };
 
 function createModuleParamsReducer(state: createModuleReqParams, action: ACTION): createModuleReqParams {
     switch (action.type) {
@@ -39,6 +42,8 @@ function createModuleParamsReducer(state: createModuleReqParams, action: ACTION)
         return { ...state, name: action.payload };
       case 'SET_MODULE_TP_URL':
         return { ...state, thirdPartyURL: action.payload };
+      case 'INIT':
+        return initialCreateModuleReqState
       default:
         return state;
     }
@@ -59,19 +64,33 @@ const Module=()=>{
     ]);
     const [createModuleReqState, dispatchCreateModuleReqState] = useReducer(createModuleParamsReducer, initialCreateModuleReqState)
     const createModule = async() => {
-        try {
-            const payload = createModuleReqState
-            console.log(payload)
-            const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/module/create`, payload, {
-                headers: {
-                    Authorization: `Bearer 1000000`
-                }
+        const payload = createModuleReqState
+        console.log(payload)
+        const res = await axios.post(`${env.NEXT_PUBLIC_API_URL}/api/module/create`, payload, {
+            headers: {
+                Authorization: `Bearer 1000000`
             }
-            );
-            console.log(res)
-        }catch(e) {
-            console.log(e)
         }
+        );
+        return res
+    }
+    const onSubmit = () => {
+        console.log("Inside on subimt")
+        toast.promise(createModule, {
+            loading: "Creating Module...",
+            success: (data) => {
+                dispatchCreateModuleReqState({
+                    type: "INIT"
+                })
+                return "Module Created"
+            },
+            error: (e: AxiosError) => {
+                if (e.status === 403) {
+                    return "Error Creating Module. Unauthorized."
+                }
+                return "Error Creating Module. If you are authorized, please contact support."
+            }
+        })
     }
     return(
         <div className="flex flex-col items-center justify-start">
@@ -120,7 +139,7 @@ const Module=()=>{
                                     })
                                 }}/>
                             </div>
-                            <Button onClick={createModule}>
+                            <Button onClick={onSubmit}>
                                 Create Module
                             </Button>
                         </PopoverContent>

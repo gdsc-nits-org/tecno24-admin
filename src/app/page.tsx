@@ -6,51 +6,30 @@ import { useSignInWithGoogle } from 'react-firebase-hooks/auth';
 import { auth } from './utils/firebase';
 import { useEffect } from 'react';
 
-
 export default function HomePage() {
-  interface User {
-    firebaseId: string;
-  }
   const [signInWithGoogle, user, loading, error] = useSignInWithGoogle(auth);
   const router = useRouter();
+
   useEffect(() => {
-    const checkUserFirstTime = async () => {
+    const checkUserFirstTime = () => {
       if (user) {
         try {
-          const idToken = await user.user.getIdToken();
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/`, {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${idToken}`,
-            },
-          });
-  
-          if (!response.ok) {
-            // Log response status and message
-            const errorData = await response.text();
-            throw new Error(`Network response was not ok. Status: ${response.status}. Message: ${errorData}`);
-          }
-  
-          const users = await response.json();
-          const userExists = users.some((existingUser: User) => existingUser.firebaseId === idToken);
-  
-          if (userExists) {
-            router.push('/dashboard');
+          const metadata = user.user.metadata;
+          const isFirstTime = metadata.creationTime === metadata.lastSignInTime;
+
+          if (isFirstTime) {
+             router.push('/form');
           } else {
-            router.push('/form');
+             router.push('/dashboard'); 
           }
         } catch (error) {
-          console.error('Error checking user in DB:', error);
-          // Optionally, handle the error in the UI
+          console.error('Error checking user:', error);
         }
       }
     };
-  
+
     checkUserFirstTime();
-  }, [user, router]);
-  
-  
+  }, [user, router]); 
 
   if (error) {
     return (
@@ -73,6 +52,7 @@ export default function HomePage() {
   }
   return (
     <main className="flex min-h-screen flex-col items-center justify-center">
+      <h1 className="text-xl my-2">Tecnoesis 2024 Admin Panel. Please Sign In to continue</h1>
       <Button variant={"secondary"} onClick={() => signInWithGoogle()}>
         Sign In
       </Button>

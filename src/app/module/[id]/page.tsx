@@ -19,6 +19,7 @@ import { useAuthState } from 'react-firebase-hooks/auth';
 import { useIdToken } from "react-firebase-hooks/auth";
 import { auth } from "../../utils/firebase";
 import { Button } from "~/components/ui/button";
+import { env } from "~/env";
 
 interface moduleParams{
     id: string
@@ -59,7 +60,6 @@ const initialCreateEventState: createEventRequestParams = {
 }
 
 type ACTION =
-  | { type: 'SET_MODULE_ID'; payload: string }
   | { type: 'SET_EVENT_NAME'; payload: string }
   | { type: 'SET_EVENT_DESC'; payload: string }
   | { type: 'SET_EVENT_MIN_TEAM_SZ'; payload: number }
@@ -75,8 +75,6 @@ type ACTION =
 
 function createEventParamsReducer(state: createEventRequestParams, action: ACTION): createEventRequestParams {
     switch (action.type) {
-      case 'SET_MODULE_ID':
-        return { ...state, moduleId: action.payload };
       case 'SET_EVENT_NAME':
         return { ...state, name: action.payload };
       case 'SET_EVENT_DESC':
@@ -116,11 +114,6 @@ const Module=({ params }:{ params: moduleParams })=>{
     const [createEventReqState, dispatchCreateEventReqState] = useReducer(createEventParamsReducer, initialCreateEventState)
 
     async function createEvent() {
-        console.log("Module moduleId:", params.id)
-        dispatchCreateEventReqState({
-            type: "SET_MODULE_ID",
-            payload: params.id
-        })
         const payload = {
             ...createEventReqState,
             moduleId: params.id,
@@ -129,7 +122,7 @@ const Module=({ params }:{ params: moduleParams })=>{
         }
         console.log(payload)
 
-        const res= await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/event/create`,  payload,
+        const res= await axios.post(`${env.NEXT_PUBLIC_API_URL}/api/event/create`,  payload,
         {
             headers: {
                 Authorization: `Bearer 1000000` // Add your token here

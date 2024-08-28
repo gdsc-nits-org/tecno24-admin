@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../utils/firebase";
+import { env } from "~/env";
 
 interface FormData {
     firstName: string;
@@ -19,7 +20,7 @@ interface FormData {
 const CompleteProfile = () => {
     const router = useRouter();
     const [user, loading, error] = useAuthState(auth);
-    const [formData, setFormData] = useState<FormData>({
+    const initialFormState = {
         firstName: "",
         middleName: "",
         lastName: "",
@@ -28,7 +29,8 @@ const CompleteProfile = () => {
         collegeName: "",
         registrationId: "",
         balance: 0,
-    });
+    }
+    const [formData, setFormData] = useState<FormData>(initialFormState);
 
     const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setFormData({
@@ -42,12 +44,14 @@ const CompleteProfile = () => {
         try {
             if (user) {
                 const idToken = await user.getIdToken(); 
-                const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/signup`, {
+                const payload = {
                     email: user.email,
                     firebaseId: user.uid,
                     imageUrl: user.photoURL,
-                    ...formData,
-                }, {
+                    ...formData
+                }
+                console.log(payload)
+                const response = await axios.post(`${env.NEXT_PUBLIC_API_URL}/api/auth/signup`, payload, {
                     headers: {
                         Authorization: `Bearer ${idToken}`, 
                     },
