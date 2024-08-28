@@ -1,5 +1,5 @@
 "use client";
-import { useState, useReducer } from "react";
+import { useState, useReducer,useEffect } from "react";
 import {
     Card,
     CardDescription,
@@ -58,7 +58,35 @@ const initialCreateEventState: createEventRequestParams = {
     registrationEndTime: "",
     extraQuestions: []
 }
-
+interface module{
+    id:string,
+    name:string,
+    description:string,
+    iconImage:string,
+    coverImage:string,
+    thirdPartyURL:string
+}
+interface event{
+    id: string,
+    name: string,
+    posterImage: string,
+    maxTeamSize: number,
+    minTeamSize: number,
+    attendanceIncentive: number,
+    registrationIncentive: number,
+    prizeDescription: string,
+    stagesDescription: string,
+    description: string,
+    venue: string,
+    lat: string,
+    lng: string,
+    registrationStartTime:string,
+    registrationEndTime: string,
+    extraQuestions: [
+    {}
+    ],
+    module: module
+}
 type ACTION =
   | { type: 'SET_EVENT_NAME'; payload: string }
   | { type: 'SET_EVENT_DESC'; payload: string }
@@ -108,7 +136,58 @@ function createEventParamsReducer(state: createEventRequestParams, action: ACTIO
 export const runtime = "edge";
 
 
+
+interface GetEventAPIResponse {
+    status: string,
+    msg: event[]
+}
+
+
+interface ModuleForName {
+    coverImage: string,
+    description: string,
+    events: Event[],
+    iconImage: string,
+    id: string,
+    name: string,
+}
+
+interface GetModuleAPIResponse{
+    status:string,
+    msg:ModuleForName[]
+}
 const Module=({ params }:{ params: moduleParams })=>{
+    const [events,setEvents]=useState<event[]>([]);
+    const [modName,setModName]=useState<string>("Module Name Loading......");
+    useEffect(()=>{
+        async function fetchModName(){
+            try{
+                const mod=await axios.get<GetModuleAPIResponse>(`${env.NEXT_PUBLIC_API_URL}/api/module`);
+                let temp=mod?.data?.msg.filter((item)=>{
+                    return(
+                        item.id===params.id
+                    );
+                });
+                if(temp && temp.length>0){
+                    setModName(temp[0]?.name!);
+                }
+            }
+            catch(err){
+                console.log(err);
+            }
+        }
+        async function fetchData(){
+            try{
+                const data=await axios.get<GetEventAPIResponse>(`${env.NEXT_PUBLIC_API_URL}/api/module/${params.id}/event`);
+                setEvents(data?.data?.msg);
+            }
+            catch(err){
+                console.log(err);
+            }
+        }
+        fetchData();
+        fetchModName();
+    },[]);
     const [user, loading, error] = useAuthState(auth);
     const [usermoduleIdToken, loadingToken, errorToken] = useIdToken(auth);
     const [createEventReqState, dispatchCreateEventReqState] = useReducer(createEventParamsReducer, initialCreateEventState)
@@ -133,38 +212,39 @@ const Module=({ params }:{ params: moduleParams })=>{
 
     }
 
-    const [events,setEvents]=useState([
-        {
-            moduleId:1,
-            name:"Event 1",
-            description:"Some Description About Event",
-            destination:"/event/1"
-        },
-        {
-            moduleId:2,
-            name:"Event 2",
-            description:"Some Description About Event 2",
-            destination:"/event/2"
-        }
-    ]);
     const [neweventtype,setNeweventype]=useState("solo");
     return(
         <div className='bg-[#000000] text-[#ffffff] min-h-[100vh] flex flex-col items-center justify-start'>
             <div className='w-[50vw] text-center'>
                 <div className='pt-[4rem]'>
-                    <h1 className='text-[2rem]'> Robotron Module </h1>
+                    <h1 className='text-[2rem]'>{modName} </h1>
                 </div>
                 <div className='flex flex-wrap items-center'>
-                    {events.map((item,i)=>
-                        <Link href={item.destination} key = {i} className="m-4">
-                            <Card className='p-[1rem] bg-[transparent]'>
-                                <CardHeader className="text-[#ffffff]">{item.name}</CardHeader>
-                                <CardDescription>
-                                    {item.description}
-                                </CardDescription>
-                            </Card>
-                        </Link>
-                    )
+                    {/* {events?.map((item,i)=>{
+                    return(
+                            <Link href={item.destination} key = {i} className="m-4">
+                                <Card className='p-[1rem] bg-[transparent]'>
+                                    <CardHeader className="text-[#ffffff]">{item.name}</CardHeader>
+                                    <CardDescription>
+                                        {item.description}
+                                    </CardDescription>
+                                </Card>
+                            </Link>
+                            )
+                            }
+                        )
+                    } */}
+                   { 
+                        events?.map((event) => {
+                            return (
+                                <Link href={`/event/${event.id}`} key={event.id}>
+                                    <div className="flex flex-col" >
+                                        {event.name}
+                                        {event.description}
+                                    </div>
+                                </Link>
+                            )
+                         })
                     }
                     <Popover>
                         <PopoverTrigger asChild>
