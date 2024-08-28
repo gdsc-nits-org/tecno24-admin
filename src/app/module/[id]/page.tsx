@@ -155,44 +155,6 @@ const Module=({ params }:{ params: moduleParams })=>{
         }
     ]);
     const [neweventtype,setNeweventype]=useState("solo");
-<<<<<<< HEAD
-    const createEvent=async(e: React.FormEvent<HTMLButtonElement>)=>{
-        e.preventDefault();
-        try{
-            console.log("Start");
-            const createEvnt=await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/event/create`,{
-                    moduleId:params.id,
-                    name: name,
-                    posterImage: "posterImage",
-                    maxTeamSize:Number(maxTeamSize),
-                    minTeamSize:Number(minTeamSize),
-                    attendanceIncentive: 1,
-                    registrationIncentive: 1,
-                    prizeDescription: "prizeDescription",
-                    stagesDescription: "stagesDescription",
-                    description: description,
-                    venue: "venue",
-                    lat: "24.7560907",
-                    lng: "92.7823423",
-                    registrationStartTime: "2024-08-27T15:30:00",
-                    registrationEndTime: "2024-08-27T15:30:00",
-                    extraQuestions: []  
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer 1000000` // Add your token here
-                    }
-                }
-                
-             );
-             console.log(createEvnt);
-        }
-        catch (error:any) {
-            console.error('Error creating event:', error.response ? error.response.data : error.message);
-        }
-    }
-=======
->>>>>>> 2f1256333f5852806c85798db36130913744cd20
     return(
         <div className='bg-[#000000] text-[#ffffff] min-h-[100vh] flex flex-col items-center justify-start'>
             <div className='w-[50vw] text-center'>

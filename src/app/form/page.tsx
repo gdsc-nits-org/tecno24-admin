@@ -1,14 +1,25 @@
 'use client';
-import { useState } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../utils/firebase";
 
+interface FormData {
+    firstName: string;
+    middleName: string;
+    lastName: string;
+    phoneNumber: string;
+    username: string;
+    collegeName: string;
+    registrationId: string;
+    balance: number;
+}
+
 const CompleteProfile = () => {
     const router = useRouter();
     const [user, loading, error] = useAuthState(auth);
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<FormData>({
         firstName: "",
         middleName: "",
         lastName: "",
@@ -19,14 +30,14 @@ const CompleteProfile = () => {
         balance: 0,
     });
 
-    const handleChange = (e: any) => {
+    const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value,
         });
     };
 
-    const handleSubmit = async (e: any) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         try {
             if (user) {

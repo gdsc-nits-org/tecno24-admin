@@ -11,9 +11,15 @@ import {
 
 import { Button } from "~/components/ui/button";
 
-interface eventParams {
-    id: string
+interface EventParams {
+    id: string;
 }
+
+interface UserData {
+    avatar_url: string;
+    login: string;
+}
+
 export const runtime = "edge";
 const tablesData = [
     {
@@ -33,11 +39,12 @@ const tablesData = [
         ],
     },
 ];
-//download csv
-const jsonToCSV = (data: any[]): string => {
+
+// Convert JSON to CSV
+const jsonToCSV = (data: Record<string, string | number>[]): string => {
     if (data.length === 0) return '';
-  
-    const headers = Object.keys(data[0]);
+    const headers = data[0] ? Object.keys(data[0]) : [];
+    
     const csvRows = [headers.join(',')];
   
     for (const row of data) {
@@ -49,7 +56,7 @@ const jsonToCSV = (data: any[]): string => {
     }
   
     return csvRows.join('\n');
-  };
+};
   
   const downloadCSV = async () => {
     try {
@@ -57,17 +64,12 @@ const jsonToCSV = (data: any[]): string => {
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-  
-      const jsonData = await response.json();
-      
-      // Filter or map the data as needed
-      const filteredData = jsonData.map((item: any) => ({
+      const jsonData: UserData[] = await response.json() as UserData[];;
+      const filteredData = jsonData.map((item: UserData) => ({
         field1: item.avatar_url,
         field2: item.login,
       }));
-  
       const csvData = jsonToCSV(filteredData);
-  
       const blob = new Blob([csvData], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -80,17 +82,16 @@ const jsonToCSV = (data: any[]): string => {
       console.error('Error downloading the CSV:', error);
     }
   };
-
-const Event = ({ params }: { params: eventParams }) => {
-    // console.log(params.id);
+  
+const Event = ({ params }: { params: EventParams }) => {
     return (
-        <main className="flex flex-col justify-center items-center h-screen  p-4">
+        <main className="flex flex-col justify-center items-center h-screen p-4">
             <div className="flex flex-row justify-center items-center w-full text-4xl font-mono font-bold uppercase py-8 my-10 text-center">
                 Robowar
             </div>
             {tablesData.map((table) => (
                 <div key={table.id} className="w-full max-w-4xl p-4 mb-6">
-                    <Table className="w-full  shadow-md rounded-lg">
+                    <Table className="w-full shadow-md rounded-lg">
                         <TableCaption>{table.caption}</TableCaption>
                         <TableHeader>
                             <TableRow>
