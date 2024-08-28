@@ -1,92 +1,123 @@
 'use client';
 import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from "~/components/ui/accordion"
+    Table,
+    TableBody,
+    TableCaption,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "~/components/ui/table"
+
 import { Button } from "~/components/ui/button";
 
-interface eventParams {
-    id: string
+interface EventParams {
+    id: string;
+}
+
+interface UserData {
+    avatar_url: string;
+    login: string;
 }
 
 export const runtime = "edge";
-const accordionData = [
+const tablesData = [
     {
-        id: 'item-1',
-        trigger: 'Is it accessible?',
-        content: 'Yes. It adheres to the WAI-ARIA design pattern.',
+        id: 1,
+        caption: 'Invoices for August',
+        rows: [
+            { invoice: 'INV001', status: 'Paid', method: 'Credit Card', amount: '$250.00' },
+            { invoice: 'INV002', status: 'Pending', method: 'PayPal', amount: '$75.00' },
+        ],
     },
     {
-        id: 'item-2',
-        trigger: 'How do I use it?',
-        content: 'You can use it by importing the component and passing the required props.',
-    },
-    {
-        id: 'item-3',
-        trigger: 'Is it customizable?',
-        content: 'Yes, you can customize it to suit your needs.',
+        id: 2,
+        caption: 'Invoices for September',
+        rows: [
+            { invoice: 'INV003', status: 'Paid', method: 'Bank Transfer', amount: '$400.00' },
+            { invoice: 'INV004', status: 'Overdue', method: 'Credit Card', amount: '$150.00' },
+        ],
     },
 ];
 
-//downloadCsv
-// const jsonToCSV = (data: any[]): string => {
-//     const headers = Object.keys(data[0]);
-//     const csvRows = [headers.join(',')];
+// Convert JSON to CSV
+const jsonToCSV = (data: Record<string, string | number>[]): string => {
+    if (data.length === 0) return '';
+    const headers = data[0] ? Object.keys(data[0]) : [];
+    
+    const csvRows = [headers.join(',')];
   
-//     for (const row of data) {
-//       const values = headers.map(header => {
-//         const value = row[header];
-//         return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
-//       });
-//       csvRows.push(values.join(','));
-//     }
+    for (const row of data) {
+      const values = headers.map(header => {
+        const value = row[header];
+        return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+      });
+      csvRows.push(values.join(','));
+    }
   
-//     return csvRows.join('\n');
-//   };
-//   const downloadCSV = async () => {
-//     try {
-//       const response = await fetch('/api/get-teams'); // Adjust the API endpoint
-//       if (!response.ok) {
-//         throw new Error('Network response was not ok');
-//       }
+    return csvRows.join('\n');
+};
   
-//       const jsonData = await response.json();
-//       const csvData = jsonToCSV(jsonData);
+  const downloadCSV = async () => {
+    try {
+      const response = await fetch('https://api.github.com/users'); // Adjust the API endpoint
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      const jsonData: UserData[] = await response.json() as UserData[];;
+      const filteredData = jsonData.map((item: UserData) => ({
+        field1: item.avatar_url,
+        field2: item.login,
+      }));
+      const csvData = jsonToCSV(filteredData);
+      const blob = new Blob([csvData], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'teams.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading the CSV:', error);
+    }
+  };
   
-//       const blob = new Blob([csvData], { type: 'text/csv' });
-//       const url = window.URL.createObjectURL(blob);
-//       const link = document.createElement('a');
-//       link.href = url;
-//       link.setAttribute('download', 'teams.csv');
-//       document.body.appendChild(link);
-//       link.click();
-//       document.body.removeChild(link);
-//     } catch (error) {
-//       console.error('Error downloading the CSV:', error);
-//     }
-//   };
-
-const Event = ({params}: { params: eventParams }) => {
-    console.log(params.id);
+const Event = ({ params }: { params: EventParams }) => {
     return (
-        <>
-            <main className="flex flex-col justify-center items-center w-screen h-screen ">
-                <div className="flex flex-row justify-center items-center w-screen text-4xl font-mono font-bold uppercase py-8 my-10"> Robowar </div>
-                <div className="flex flex-col justify-center items-center w-screen py-10 my-5">
-                    <Accordion type="single" collapsible className="w-1/3 py-0 flex flex-col gap-3">
-                        {accordionData.map((item,i) => (
-                            <AccordionItem key={i} value={item.id}>
-                                <AccordionTrigger>{item.trigger}</AccordionTrigger>
-                                <AccordionContent>{item.content}</AccordionContent>
-                            </AccordionItem>
-                        ))}
-                    </Accordion>
+        <main className="flex flex-col justify-center items-center h-screen p-4">
+            <div className="flex flex-row justify-center items-center w-full text-4xl font-mono font-bold uppercase py-8 my-10 text-center">
+                Robowar
+            </div>
+            {tablesData.map((table) => (
+                <div key={table.id} className="w-full max-w-4xl p-4 mb-6">
+                    <Table className="w-full shadow-md rounded-lg">
+                        <TableCaption>{table.caption}</TableCaption>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead className="w-[100px]">Invoice</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Method</TableHead>
+                                <TableHead className="text-right">Amount</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {table.rows.map((row, index) => (
+                                <TableRow key={index}>
+                                    <TableCell className="font-medium">{row.invoice}</TableCell>
+                                    <TableCell>{row.status}</TableCell>
+                                    <TableCell>{row.method}</TableCell>
+                                    <TableCell className="text-right">{row.amount}</TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
                 </div>
-                <Button className="w-35 text-lg  font-mono font-bold" variant="outline">Download</Button>
-            </main>
-        </>
+            ))}
+            <Button onClick={downloadCSV} className="mt-6 text-lg font-mono font-bold" variant="outline">
+                Download
+            </Button>
+        </main>
     );
 }
 
