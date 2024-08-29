@@ -1,4 +1,5 @@
 'use client';
+
 import {
     Table,
     TableBody,
@@ -7,13 +8,11 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from "~/components/ui/table"
-
+} from "~/components/ui/table";
 import { Button } from "~/components/ui/button";
-import { useState, useEffect } from "react";
+import { useQuery } from '@tanstack/react-query';
 import axios from "axios";
 import { env } from "~/env";
-export const runtime = "edge";
 
 interface TeamMember {
     id: string;
@@ -27,96 +26,100 @@ interface TeamMember {
     registrationId: string;
     phoneNumber: string;
 }
+
 interface Team {
     id: string;
     teamName: string;
     registrationStatus: string;
     members: TeamMember[];
-    extraInformation: Record<string, any>[];
+    extraInformation: Record<string, any>;
     eventId: string;
 }
 
 interface EventParams {
     id: string;
 }
-interface module{
-    id:string,
-    name:string,
-    description:string,
-    iconImage:string,
-    coverImage:string,
-    thirdPartyURL:string
-}
-interface event{
-    id: string,
-    name: string,
-    posterImage: string,
-    maxTeamSize: number,
-    minTeamSize: number,
-    attendanceIncentive: number,
-    registrationIncentive: number,
-    prizeDescription: string,
-    stagesDescription: string,
-    description: string,
-    venue: string,
-    lat: string,
-    lng: string,
-    registrationStartTime:string,
-    registrationEndTime: string,
-    extraQuestions: [
-    {}
-    ],
-    module: module
-}
-interface GetApiName{
-    status: string,
-    msg: event
-}
-interface GetApiTeam{
-    status: string,
-    msg: Team []
-}
-const jsonToCSV = (data: Record<string, string | number>[]): string => {
-    if (data.length === 0) return '';
-    const headers = data[0] ? Object.keys(data[0]) : [];
 
-    const csvRows = [headers.join(',')];
+interface Module {
+    id: string;
+    name: string;
+    description: string;
+    iconImage: string;
+    coverImage: string;
+    thirdPartyURL: string;
+}
 
-    for (const row of data) {
-        const values = headers.map(header => {
-            const value = row[header];
-            return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
-        });
-        csvRows.push(values.join(','));
-    }
+interface Event {
+    id: string;
+    name: string;
+    posterImage: string;
+    maxTeamSize: number;
+    minTeamSize: number;
+    attendanceIncentive: number;
+    registrationIncentive: number;
+    prizeDescription: string;
+    stagesDescription: string;
+    description: string;
+    venue: string;
+    lat: string;
+    lng: string;
+    registrationStartTime: string;
+    registrationEndTime: string;
+    extraQuestions: any[];
+    module: Module;
+}
 
-    return csvRows.join('\n');
+interface GetApiName {
+    status: string;
+    msg: Event;
+}
+
+interface GetApiTeam {
+    status: string;
+    msg: Team[];
+}
+
+const fetchEventName = async (id: string) => {
+    const { data } = await axios.get<GetApiName>(`${env.NEXT_PUBLIC_API_URL}/api/event/${id}`);
+    return data.msg.name;
+};
+
+const fetchTeams = async (id: string) => {
+    const { data } = await axios.get<GetApiTeam>(`${env.NEXT_PUBLIC_API_URL}/api/team/event/${id}/registered_teams`, {
+        headers: {
+            Authorization: `Bearer 1000000`, // Replace with actual token
+        },
+    });
+    return data.msg;
 };
 
 const Event = ({ params }: { params: EventParams }) => {
-    const [name, setName] = useState("");
-    const [teams, setTeams] = useState<Team[]>([]);
-    useEffect(() => {
-        // console.log(params.id)
-        const fetchTeams = async () => {
-            try {
-                const name = await axios.get<GetApiName>(`${env.NEXT_PUBLIC_API_URL}/api/event/${params.id}`)
-                const response = await axios.get<GetApiTeam>(`${env.NEXT_PUBLIC_API_URL}/api/team/event/${params.id}/registered_teams`,
-                    {
-                        headers: {
-                            'Authorization': `Bearer 1000000`
-                        }
-                    })
-                // console.log(response.data.msg)
-                setTeams(response?.data.msg);
-                setName(name?.data?.msg?.name);
-            } catch (error) {
-                console.error("Error fetching team data:", error);
-            }
-        };
+    const { data: eventName, error: nameError, isLoading: nameLoading } = useQuery({
+        queryKey: ['eventName', params.id],
+        queryFn: () => fetchEventName(params.id),
+    });
 
-        fetchTeams();
-    }, []);
+    const { data: teams, error: teamsError, isLoading: teamsLoading } = useQuery({
+        queryKey: ['eventTeams', params.id],
+        queryFn: () => fetchTeams(params.id),
+    });
+
+    const jsonToCSV = (data: Record<string, string | number>[]): string => {
+        if (data.length === 0) return '';
+        const headers = data[0] ? Object.keys(data[0]) : [];
+
+        const csvRows = [headers.join(',')];
+
+        for (const row of data) {
+            const values = headers.map(header => {
+                const value = row[header];
+                return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+            });
+            csvRows.push(values.join(','));
+        }
+
+        return csvRows.join('\n');
+    };
 
     const downloadCSV = () => {
         //CSV headers
@@ -140,7 +143,6 @@ const Event = ({ params }: { params: EventParams }) => {
                 "College Name": ''
             }];
 
-            // Add members of the team
             const teamMembers = team?.members.map((member, memberIndex) => ({
                 "Sl No.": memberIndex + 1,
                 "Team Name": '',
@@ -150,7 +152,6 @@ const Event = ({ params }: { params: EventParams }) => {
                 "College Name": member.collegeName
             }));
 
-            // Return the combined array of the team header, members, and  empty rows for spacing
             return [...teamHeader, ...teamMembers, {}, {}];
         });
 
@@ -160,17 +161,19 @@ const Event = ({ params }: { params: EventParams }) => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `${name}`);
+        link.setAttribute('download', `${eventName}`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
 
+    if (nameLoading || teamsLoading) return <div>Loading...</div>;
+    if (nameError || teamsError) return <div>Error fetching data</div>;
 
     return (
         <main className="flex flex-col justify-center items-center h-screen p-4">
             <div className="flex flex-row justify-center items-center w-full text-4xl font-mono font-bold uppercase py-8 my-10 text-center">
-                {name}
+                {eventName}
             </div>
             {teams?.map((team, teamIndex) => (
                 <div key={team.id} className="w-full max-w-4xl p-4 mb-6">
@@ -195,11 +198,11 @@ const Event = ({ params }: { params: EventParams }) => {
                     </Table>
                 </div>
             ))}
-            <Button onClick={downloadCSV} className="mt-6 text-lg font-mono font-bold" variant="outline">
+            <Button onClick = {downloadCSV} className="mt-6 text-lg font-mono font-bold" variant="outline">
                 Download
             </Button>
         </main>
     );
-}
+};
 
 export default Event;

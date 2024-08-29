@@ -18,7 +18,7 @@ export default function HomePage() {
           const isFirstTime = metadata.creationTime === metadata.lastSignInTime;
 
           if (isFirstTime) {
-             router.push('/form');
+             router.push('/userSignup');
           } else {
              router.push('/dashboard'); 
           }
