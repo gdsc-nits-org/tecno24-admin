@@ -23,6 +23,7 @@ import {
     DialogTrigger,
 } from "~/components/ui/dialog"
 import { toast } from "sonner";
+export const runtime = "edge";
 
 
 interface TeamMember {

@@ -17,6 +17,8 @@ import { env } from '~/env';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+export const runtime = "edge";
+
 
 interface Module {
   coverImage: string;

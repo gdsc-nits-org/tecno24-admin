@@ -19,6 +19,7 @@ import {
     FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+export const runtime = "edge";
 
 // Define form schema with Zod
 const formSchema = z.object({

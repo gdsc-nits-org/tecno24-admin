@@ -20,6 +20,7 @@ import { Textarea } from "~/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { toast } from "sonner";
 import { env } from "~/env"
+export const runtime = "edge";
 
 const formSchema = z.object({
     name: z.string().min(2, {

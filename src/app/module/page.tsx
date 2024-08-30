@@ -11,7 +11,7 @@ import {
 import { Button } from "~/components/ui/button";
 import { env } from "~/env";
 import { toast } from "sonner";
-
+export const runtime = "edge";
 interface createModuleReqParams {
     description: string, 
     coverImage: string, 
