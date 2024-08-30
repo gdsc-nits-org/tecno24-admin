@@ -19,6 +19,7 @@ import { Input } from "~/components/ui/input"
 import { Textarea } from "~/components/ui/textarea"
 import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { toast } from "sonner";
+import { Label } from "~/components/ui/label";
 import { env } from "~/env"
 export const runtime = "edge";
 
@@ -76,8 +77,8 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
             description: "",
             registrationStartTime: "",
             registrationEndTime: "",
-            minTeamSize: 1, 
-            maxTeamSize: 1, 
+            minTeamSize: 1,
+            maxTeamSize: 1,
             posterImage: "https://avatars.githubusercontent.com/u/74897001",
             attendanceIncentive: 1,
             registrationIncentive: 1,
@@ -180,11 +181,11 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
                                 <div className="flex flex-row gap-4">
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="solo" id="solo" />
-                                        <label htmlFor="solo">Solo</label>
+                                        <Label htmlFor="solo">Solo</Label>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="group" id="group" />
-                                        <label htmlFor="group">Group</label>
+                                        <Label htmlFor="group">Group</Label>
                                     </div>
                                 </div>
                             </RadioGroup>
@@ -200,7 +201,12 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
                                     <FormItem>
                                         <FormLabel>Minimum Team Size</FormLabel>
                                         <FormControl>
-                                            <Input type="number" placeholder="Minimum team size" {...field} />
+                                            <Input
+                                                type="number"
+                                                placeholder="Minimum team size"
+                                                value={field.value}
+                                                onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -214,7 +220,12 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
                                     <FormItem>
                                         <FormLabel>Maximum Team Size</FormLabel>
                                         <FormControl>
-                                            <Input type="number" placeholder="Maximum team size" {...field} />
+                                            <Input
+                                                type="number"
+                                                placeholder="Maximum team size"
+                                                value={field.value}
+                                                onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 0)}
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
