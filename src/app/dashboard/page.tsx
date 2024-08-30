@@ -50,7 +50,7 @@ export default function Dashboard() {
     toast.success("Modules Fetched Successfully.");
 
   if (error || queryError) {
-    toast.error(`Could Not Fetch Modules: ${error}`);
+    toast.error('Could Not Fetch Modules');
     return <div>There was some error. Please contact support</div>;
   }
 

@@ -13,6 +13,17 @@ import { Button } from "~/components/ui/button";
 import { useQuery } from '@tanstack/react-query';
 import axios from "axios";
 import { env } from "~/env";
+import { useState } from "react";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "~/components/ui/dialog"
+import { toast } from "sonner";
+
 
 interface TeamMember {
     id: string;
@@ -32,7 +43,7 @@ interface Team {
     teamName: string;
     registrationStatus: string;
     members: TeamMember[];
-    extraInformation: Record<string, any>;
+    extraInformation: Record<string, []>;
     eventId: string;
 }
 
@@ -65,7 +76,7 @@ interface Event {
     lng: string;
     registrationStartTime: string;
     registrationEndTime: string;
-    extraQuestions: any[];
+    extraQuestions: string[];
     module: Module;
 }
 
@@ -79,6 +90,7 @@ interface GetApiTeam {
     msg: Team[];
 }
 
+
 const fetchEventName = async (id: string) => {
     const { data } = await axios.get<GetApiName>(`${env.NEXT_PUBLIC_API_URL}/api/event/${id}`);
     return data.msg.name;
@@ -87,7 +99,7 @@ const fetchEventName = async (id: string) => {
 const fetchTeams = async (id: string) => {
     const { data } = await axios.get<GetApiTeam>(`${env.NEXT_PUBLIC_API_URL}/api/team/event/${id}/registered_teams`, {
         headers: {
-            Authorization: `Bearer 1000000`, // Replace with actual token
+            Authorization: `Bearer 1000000`,
         },
     });
     return data.msg;
@@ -103,6 +115,43 @@ const Event = ({ params }: { params: EventParams }) => {
         queryKey: ['eventTeams', params.id],
         queryFn: () => fetchTeams(params.id),
     });
+
+    const [userId, setUserId] = useState('');
+    const [open, setOpen] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+
+        if (userId) {
+            try {
+                const data = {
+                    organizers: [userId]
+                };
+
+                const response = await axios.post(
+                    `${env.NEXT_PUBLIC_API_URL}/api/event/add/organiser/${params.id}`,
+                    data,
+                    {
+                        headers: {
+                            Authorization: `Bearer 1000000`
+                        }
+                    }
+                );
+
+                if (response.status === 200) {
+                    toast.success('Event organiser added successfully!');
+                    setOpen(false);
+                } else {
+                    toast.error('Failed to add event organiser.');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                toast.error('An error occurred while adding the event organiser.');
+            }
+        } else {
+            toast.error('UserId is required.');
+        }
+    };
 
     const jsonToCSV = (data: Record<string, string | number>[]): string => {
         if (data.length === 0) return '';
@@ -122,7 +171,6 @@ const Event = ({ params }: { params: EventParams }) => {
     };
 
     const downloadCSV = () => {
-        //CSV headers
         const headers = [{
             "Sl No.": "Sl No.",
             "Team Name": "Team Name",
@@ -133,7 +181,6 @@ const Event = ({ params }: { params: EventParams }) => {
         }];
 
         const filteredData = teams?.flatMap((team, teamIndex) => {
-            // Add a row for the team index
             const teamHeader = [{
                 "Sl No.": `Team ${teamIndex + 1}`,
                 "Team Name": team.teamName,
@@ -153,9 +200,8 @@ const Event = ({ params }: { params: EventParams }) => {
             }));
 
             return [...teamHeader, ...teamMembers, {}, {}];
-        });
+        }) ?? [];
 
-        // Combine the headers with the data
         const csvData = jsonToCSV([...headers, ...filteredData]);
         const blob = new Blob([csvData], { type: 'text/csv' });
         const url = window.URL.createObjectURL(blob);
@@ -198,9 +244,37 @@ const Event = ({ params }: { params: EventParams }) => {
                     </Table>
                 </div>
             ))}
-            <Button onClick = {downloadCSV} className="mt-6 text-lg font-mono font-bold" variant="outline">
-                Download
-            </Button>
+            <div className="flex flex-row items-center justify-center gap-12">
+                <Button onClick={downloadCSV} className="mt-6 text-lg font-mono font-bold" variant="outline">
+                    Download
+                </Button>
+                <Dialog open={open} onOpenChange={setOpen}>
+                    <DialogTrigger asChild>
+                        <Button className="mt-6 text-lg font-mono font-bold" variant="outline">
+                            Add Event Organiser
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Enter Event Organiser User ID</DialogTitle>
+                            <DialogDescription>
+                                Please enter the User ID of the person you wish to add as an event organiser.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSubmit} className="flex flex-row items-center justify-center gap-5">
+                            <input
+                                className="text-black"
+                                type="text"
+                                value={userId}
+                                onChange={(e) => setUserId(e.target.value)}
+                                placeholder="User ID"
+                                required
+                            />
+                            <Button type="submit" variant="outline">Submit</Button>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+            </div>
         </main>
     );
 };
