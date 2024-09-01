@@ -27,6 +27,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "~/app/utils/firebase";
 import { Spinner } from "~/components/ui/spinner";
 import { User } from "firebase/auth";
+import { useRouter } from "next/navigation";
 export const runtime = "edge";
 
 
@@ -129,6 +130,7 @@ async function addOrganizer(userId: string, eventId: string, token: string | und
 
 const Event = ({ params }: { params: EventParams }) => {
     const [user, loading] = useAuthState(auth)
+    const router = useRouter()
     const { data: eventName, error: nameError, isLoading: nameLoading } = useQuery({
         queryKey: ['eventName', params.id],
         queryFn: () => fetchEventName(params.id),
@@ -220,7 +222,10 @@ const Event = ({ params }: { params: EventParams }) => {
         document.body.removeChild(link);
     };
 
-    if (nameError || teamsError) return <div>Error fetching data</div>;
+    if (nameError || teamsError) {
+        toast.error("Error Fetching Event Data. Are you Event Organizer?")
+        router.push("/dashboard")
+    }
 
     if (loading || nameLoading || teamsLoading) {
         return (
