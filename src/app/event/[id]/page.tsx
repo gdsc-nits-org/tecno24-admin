@@ -128,9 +128,7 @@ async function addOrganizer(userId: string, eventId: string, token: string | und
 }
 
 const Event = ({ params }: { params: EventParams }) => {
-    const [user, loading, error] = useAuthState(auth)
-
-
+    const [user, loading] = useAuthState(auth)
     const { data: eventName, error: nameError, isLoading: nameLoading } = useQuery({
         queryKey: ['eventName', params.id],
         queryFn: () => fetchEventName(params.id),

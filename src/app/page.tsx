@@ -8,16 +8,16 @@ import { auth } from './utils/firebase';
 import { useEffect } from 'react';
 
 export default function HomePage() {
-  const [user, loading, error] = useAuthState(auth);
-  const [signInWithGoogle, _user, _loading, _error] = useSignInWithGoogle(auth);
+  const [signInWithGoogle, user, loading, error] = useSignInWithGoogle(auth);
+  const [_user, _loading, _error] = useAuthState(auth);
   const router = useRouter();
 
   useEffect(() => {
     const checkUserFirstTime = () => {
       if (user) {
         try {
-          const metadata = user.metadata;
-          const isFirstTime = metadata.creationTime === metadata.lastSignInTime;
+          const metadata = _user?.metadata;
+          const isFirstTime = metadata?.creationTime === metadata?.lastSignInTime;
 
           if (isFirstTime) {
              router.push('/userSignup');
@@ -50,12 +50,13 @@ export default function HomePage() {
   if (user) {
     return (
       <div>
-        You are signed in as {user.displayName}. <Link href={"/dashboard"}>
+        You are signed in as {_user?.displayName}. <Link href={"/dashboard"}>
       Dashboard
     </Link>
       </div>
     );
   }
+  if(!_user)
   return (
     <main className="flex min-h-screen flex-col items-center justify-center">
       <h1 className="text-xl my-2">Tecnoesis 2024 Admin Panel. Please Sign In to continue</h1>
@@ -64,4 +65,7 @@ export default function HomePage() {
       </Button>
     </main>
   );
+  else{
+    router.push('/dashboard');
+  }
 }

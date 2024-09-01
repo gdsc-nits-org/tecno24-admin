@@ -62,7 +62,7 @@ async function postData(data: z.infer<typeof formSchema>, token: string | undefi
 
 export default function CreateEventForm({ params }: { params: moduleParams }) {
     const [eventType, setEventType] = useState("solo")
-    const [user, loading, error] = useAuthState(auth)
+    const [user, loading] = useAuthState(auth)
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -122,7 +122,6 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
                             </FormItem>
                         )}
                     />
-
                     <FormField
                         control={form.control}
                         name="description"
@@ -136,7 +135,6 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
                             </FormItem>
                         )}
                     />
-
                     <FormField
                         control={form.control}
                         name="registrationStartTime"

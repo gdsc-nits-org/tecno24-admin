@@ -7,7 +7,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "~/components/ui/card";
@@ -59,7 +58,7 @@ export default function Dashboard() {
         loading: "Loading Modules"
       }
     )
-  }, [])
+  }, [refetch])
 
   if (error || queryError) {
     return <div>There was some error. Please contact support</div>;
@@ -93,7 +92,7 @@ export default function Dashboard() {
                 <Card className="w-[250px] h-[150px]">
                   <CardHeader>
                     <CardTitle>{module.name}</CardTitle>
-                    <CardDescription>{module.description == " " ? <p className='text-red-500'>"No Description"</p> : module.description}</CardDescription>
+                    <CardDescription>{module.description == " " ? <p className='text-red-500'>No Description</p> : module.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p>Events: {module.events.length}</p>

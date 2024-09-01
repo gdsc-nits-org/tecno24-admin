@@ -18,7 +18,7 @@ import { Input } from "~/components/ui/input"
 import { Textarea } from "~/components/ui/textarea"
 import { toast } from "sonner";
 import { env } from "~/env"
-import { useAuthState, useIdToken } from "react-firebase-hooks/auth";
+import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../utils/firebase";
 import { Spinner } from "~/components/ui/spinner";
 export const runtime = "edge";
@@ -48,10 +48,11 @@ async function postData(data: z.infer<typeof formSchema>, token: string | undefi
             }
         }
     )
+    return response
 }
 
 export default function CreateModuleForm({ params }: { params: moduleParams }) {
-    const [user, loading, error] = useAuthState(auth);
+    const [user, loading] = useAuthState(auth);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -74,7 +75,7 @@ export default function CreateModuleForm({ params }: { params: moduleParams }) {
                 }, 200)
                 return `Module ${data.name} has been created`
             },
-            error: (e) => {
+            error: () => {
                 return "Error Creating Module. Are you Admin?"
             }
         })

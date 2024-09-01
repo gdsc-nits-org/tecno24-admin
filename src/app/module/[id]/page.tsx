@@ -85,16 +85,13 @@ const Module = ({ params }: { params: moduleParams }) => {
     });
    
 
-    const { data: events, error: eventsError, isError, isSuccess, isLoading } = useQuery({
+    const { data: events, error: eventsError, isError, isSuccess } = useQuery({
         queryKey: ["events", params.id],
         queryFn: () => fetchData(params.id),
     });
 
     if(isSuccess){
         toast.success("Events fetched successfully")
-    }
-    if(isLoading){
-        toast.loading("Events fetching")
     }
     if(isError || eventsError){
         toast.error("Failed to fetch events")

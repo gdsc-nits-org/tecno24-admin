@@ -36,7 +36,7 @@ const formSchema = z.object({
 });
 
 async function createUser(data: z.infer<typeof formSchema>, user: User) {
-    let payload = {
+    const payload = {
         email: user.email,
         firebaseId: user.uid,
         imageUrl: user.photoURL,
