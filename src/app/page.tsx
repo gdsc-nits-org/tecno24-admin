@@ -2,19 +2,21 @@
 import Link from "next/link";
 import { useRouter } from 'next/navigation'; 
 import { Button } from '~/components/ui/button';
-import { useSignInWithGoogle } from 'react-firebase-hooks/auth';
+import { Spinner } from "~/components/ui/spinner";
+import { useSignInWithGoogle, useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from './utils/firebase';
 import { useEffect } from 'react';
 
 export default function HomePage() {
-  const [signInWithGoogle, user, loading, error] = useSignInWithGoogle(auth);
+  const [user, loading, error] = useAuthState(auth);
+  const [signInWithGoogle, _user, _loading, _error] = useSignInWithGoogle(auth);
   const router = useRouter();
 
   useEffect(() => {
     const checkUserFirstTime = () => {
       if (user) {
         try {
-          const metadata = user.user.metadata;
+          const metadata = user.metadata;
           const isFirstTime = metadata.creationTime === metadata.lastSignInTime;
 
           if (isFirstTime) {
@@ -39,12 +41,16 @@ export default function HomePage() {
     );
   }
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex w-screen h-screen justify-center items-center gap-3">
+        <Spinner size="large" />
+      </div>
+    )
   }
   if (user) {
     return (
       <div>
-        You are signed in as {user.user.displayName}. <Link href={"/dashboard"}>
+        You are signed in as {user.displayName}. <Link href={"/dashboard"}>
       Dashboard
     </Link>
       </div>

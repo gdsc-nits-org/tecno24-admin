@@ -19,9 +19,11 @@ import {
     FormMessage,
 } from "~/components/ui/form";
 import { Input } from "~/components/ui/input";
+import { Spinner } from "~/components/ui/spinner";
+import { User } from "firebase/auth";
+import { toast } from "sonner";
 export const runtime = "edge";
 
-// Define form schema with Zod
 const formSchema = z.object({
     firstName: z.string().min(1, { message: "First Name is required." }),
     middleName: z.string().optional(),
@@ -33,21 +35,26 @@ const formSchema = z.object({
     balance: z.number().default(0),
 });
 
-interface FormData {
-    firstName: string;
-    middleName?: string;
-    lastName: string;
-    phoneNumber: string;
-    username: string;
-    collegeName: string;
-    registrationId: string;
-    balance: number;
+async function createUser(data: z.infer<typeof formSchema>, user: User) {
+    let payload = {
+        email: user.email,
+        firebaseId: user.uid,
+        imageUrl: user.photoURL,
+        ...data,
+    };
+    const token = await user.getIdToken();
+    const response = await axios.post(`${env.NEXT_PUBLIC_API_URL}/api/auth/signup`, payload, {
+        headers: {
+            Authorization: `Bearer ${token}`,
+        },
+    });
+    return response
 }
 
 const CompleteProfile = () => {
     const router = useRouter();
-    const [user] = useAuthState(auth);
-    const form = useForm<FormData>({
+    const [user, loading, error] = useAuthState(auth);
+    const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             firstName: "",
@@ -60,35 +67,29 @@ const CompleteProfile = () => {
             balance: 0,
         },
     });
-
     const { handleSubmit, control, formState: { errors } } = form;
-
-    const onSubmit = async (data: FormData) => {
-        try {
-            if (user) {
-                const idToken = await user.getIdToken();
-                const payload = {
-                    email: user.email,
-                    firebaseId: user.uid,
-                    imageUrl: user.photoURL,
-                    ...data,
-                };
-                const response = await axios.post(`${env.NEXT_PUBLIC_API_URL}/api/auth/signup`, payload, {
-                    headers: {
-                        Authorization: `Bearer ${idToken}`,
-                    },
-                });
-
-                if (response.status === 200) {
-                    router.push('/dashboard');
-                } else {
-                    console.error("Unexpected response status:", response.status);
-                }
-            }
-        } catch (error) {
-            console.error("Error submitting form:", error);
+    const onSubmit = async (data: z.infer<typeof formSchema>) => {
+        if (user) {
+            toast.promise(createUser(data, user), {
+                success: () => {
+                    setTimeout(() => {
+                        router.push("/dashboard")
+                    }, 200)
+                    return "User Created Successfully"
+                },
+                loading: "Creating User...",
+                error: "Error Creating User."
+            })
         }
     };
+
+    if (loading) {
+        return (
+          <div className="flex w-screen h-screen justify-center items-center gap-3">
+            <Spinner size="large" />
+          </div>
+        )
+    }
 
     return (
         <div className="py-2 flex flex-col gap-10 min-h-screen items-center justify-center bg-gray-900">

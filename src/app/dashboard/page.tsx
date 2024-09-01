@@ -2,6 +2,7 @@
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from "../utils/firebase";
 import { Button } from '~/components/ui/button';
+import { Spinner } from '~/components/ui/spinner';
 import {
   Card,
   CardContent,
@@ -17,6 +18,7 @@ import { env } from '~/env';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 export const runtime = "edge";
 
 
@@ -43,46 +45,59 @@ export default function Dashboard() {
   const [user, loading, error] = useAuthState(auth);
   const [signOut] = useSignOut(auth);
 
-  const { data, isLoading, error: queryError, isSuccess } = useQuery({
+  const { data, isLoading, error: queryError, refetch } = useQuery({
     queryKey: ['modules'],
     queryFn: fetchModules,
+    enabled: false
   });
-
-  if (isSuccess)
-    toast.success("Modules Fetched Successfully.");
+  useEffect(() => {
+    toast.promise(
+      refetch(),
+      {
+        success: "Modules Fetched Successfully",
+        error: "Error Loading Modules",
+        loading: "Loading Modules"
+      }
+    )
+  }, [])
 
   if (error || queryError) {
-    toast.error('Could Not Fetch Modules');
     return <div>There was some error. Please contact support</div>;
   }
 
   if (loading || isLoading) {
-    return <div>Loading...</div>;
+     return (
+       <div className="flex w-screen h-screen justify-center items-center gap-3">
+        <Spinner size="large" />
+      </div>
+    )
   }
 
   if (user) {
     return (
-      <div className="flex flex-col justify-center items-center">
+      <div className="flex flex-col justify-center items-center pb-10">
         <main className='flex flex-row justify-center items-center gap-4 my-2'>
           <div className="text-xl">Signed in as {user?.displayName} </div>
           <Button variant={"secondary"} onClick={() => signOut()}>Sign Out</Button>
         </main>
-        <span className="text-4xl my-3 mb-8">Modules</span>
+        <div className='flex items-center justify-center gap-4 my-3 mb-8'>
+          <span className="text-4xl">Modules</span>
+          <Link href={"/create"}>
+            <Button variant={"secondary"}>Create Module</Button>
+          </Link>
+        </div>
         <div className="w-3/4 flex flex-row flex-wrap gap-2 items-center justify-center">
           {
             data?.msg?.map((module) => (
               <Link href={`/module/${module.id}`} key={module.id}>
-                <Card className="w-[250px] h-[200px]">
+                <Card className="w-[250px] h-[150px]">
                   <CardHeader>
                     <CardTitle>{module.name}</CardTitle>
-                    <CardDescription>{module.description}</CardDescription>
+                    <CardDescription>{module.description == " " ? <p className='text-red-500'>"No Description"</p> : module.description}</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <p>Card Content</p>
+                    <p>Events: {module.events.length}</p>
                   </CardContent>
-                  <CardFooter>
-                    <p>Card Footer</p>
-                  </CardFooter>
                 </Card>
               </Link>
             ))

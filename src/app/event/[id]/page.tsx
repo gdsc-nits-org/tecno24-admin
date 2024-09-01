@@ -23,6 +23,10 @@ import {
     DialogTrigger,
 } from "~/components/ui/dialog"
 import { toast } from "sonner";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "~/app/utils/firebase";
+import { Spinner } from "~/components/ui/spinner";
+import { User } from "firebase/auth";
 export const runtime = "edge";
 
 
@@ -97,16 +101,36 @@ const fetchEventName = async (id: string) => {
     return data.msg.name;
 };
 
-const fetchTeams = async (id: string) => {
+const fetchTeams = async (id: string, user: User) => {
+    const token = await user.getIdToken()
     const { data } = await axios.get<GetApiTeam>(`${env.NEXT_PUBLIC_API_URL}/api/team/event/${id}/registered_teams`, {
         headers: {
-            Authorization: `Bearer 1000000`,
+            Authorization: `Bearer ${token}`,
         },
     });
     return data.msg;
 };
 
+async function addOrganizer(userId: string, eventId: string, token: string | undefined) {
+    const data = {
+        organizers: [userId]
+    };
+    const response = await axios.post(
+        `${env.NEXT_PUBLIC_API_URL}/api/event/add/organiser/${eventId}`,
+        data,
+        {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        }
+    );
+    return response
+}
+
 const Event = ({ params }: { params: EventParams }) => {
+    const [user, loading, error] = useAuthState(auth)
+
+
     const { data: eventName, error: nameError, isLoading: nameLoading } = useQuery({
         queryKey: ['eventName', params.id],
         queryFn: () => fetchEventName(params.id),
@@ -114,7 +138,7 @@ const Event = ({ params }: { params: EventParams }) => {
 
     const { data: teams, error: teamsError, isLoading: teamsLoading } = useQuery({
         queryKey: ['eventTeams', params.id],
-        queryFn: () => fetchTeams(params.id),
+        queryFn: () => fetchTeams(params.id, user!),
     });
 
     const [userId, setUserId] = useState('');
@@ -122,33 +146,17 @@ const Event = ({ params }: { params: EventParams }) => {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        const token = await user?.getIdToken();
 
         if (userId) {
-            try {
-                const data = {
-                    organizers: [userId]
-                };
-
-                const response = await axios.post(
-                    `${env.NEXT_PUBLIC_API_URL}/api/event/add/organiser/${params.id}`,
-                    data,
-                    {
-                        headers: {
-                            Authorization: `Bearer 1000000`
-                        }
-                    }
-                );
-
-                if (response.status === 200) {
-                    toast.success('Event organiser added successfully!');
-                    setOpen(false);
-                } else {
-                    toast.error('Failed to add event organiser.');
-                }
-            } catch (error) {
-                console.error('Error:', error);
-                toast.error('An error occurred while adding the event organiser.');
-            }
+            toast.promise(addOrganizer(userId, params.id, token), {
+                success: () => {
+                    setOpen(false)
+                    return "Organizer Added Successfully";
+                },
+                loading: "Adding Organizer",
+                error: "Failed to add Organizer. Are you Admin?"
+            })
         } else {
             toast.error('UserId is required.');
         }
@@ -214,8 +222,16 @@ const Event = ({ params }: { params: EventParams }) => {
         document.body.removeChild(link);
     };
 
-    if (nameLoading || teamsLoading) return <div>Loading...</div>;
     if (nameError || teamsError) return <div>Error fetching data</div>;
+
+    if (loading || nameLoading || teamsLoading) {
+        return (
+          <div className="flex w-screen h-screen justify-center items-center gap-3">
+            <Spinner size="large" />
+          </div>
+        )
+    }
+
 
     return (
         <main className="flex flex-col justify-center items-center h-screen p-4">

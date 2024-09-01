@@ -21,6 +21,9 @@ import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group"
 import { toast } from "sonner";
 import { Label } from "~/components/ui/label";
 import { env } from "~/env"
+import { useAuthState } from "react-firebase-hooks/auth";
+import { auth } from "~/app/utils/firebase";
+import { Spinner } from "~/components/ui/spinner";
 export const runtime = "edge";
 
 const formSchema = z.object({
@@ -45,32 +48,23 @@ const formSchema = z.object({
     extraQuestions: z.array(z.object({}).strict()).optional(),
 })
 
-interface CreateEventFormData {
-    name: string;
-    description: string;
-    registrationStartTime: string;
-    registrationEndTime: string;
-    minTeamSize?: number;
-    maxTeamSize?: number;
-    posterImage?: string;
-    attendanceIncentive?: number;
-    registrationIncentive?: number;
-    prizeDescription?: string;
-    stagesDescription?: string;
-    venue?: string;
-    lat?: string;
-    lng?: string;
-    extraQuestions?: object[];
-}
-
 interface moduleParams {
     id: string;
 }
 
+async function postData(data: z.infer<typeof formSchema>, token: string | undefined, moduleId: string) {
+    const response = await axios.post(`${env.NEXT_PUBLIC_API_URL}/api/event/create`, {
+        moduleId,
+        ...data,
+    }, { headers: { Authorization: `Bearer ${token}` } })
+    return response
+}
+
 export default function CreateEventForm({ params }: { params: moduleParams }) {
     const [eventType, setEventType] = useState("solo")
+    const [user, loading, error] = useAuthState(auth)
 
-    const form = useForm<CreateEventFormData>({
+    const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: "",
@@ -91,26 +85,26 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
         },
     })
     const router = useRouter();
-    const onSubmit = async (data: CreateEventFormData) => {
-        try {
-            const response = await axios.post(`${env.NEXT_PUBLIC_API_URL}/api/event/create`, {
-                moduleId: params.id,
-                ...data,
+    const onSubmit = async (data: z.infer<typeof formSchema>) => {
+        const token = await user?.getIdToken()
+        toast.promise(postData(data, token, params.id), {
+            success: () => {
+                setTimeout(() => {
+                    router.push(`/module/${params.id}`)
+                }, 200)
+                return "Event created successfully"
             },
-                {
-                    headers: {
-                        Authorization: `Bearer 1000000`
-                    }
-
-                })
-            toast.success("Event created successfully")
-            router.push(`/module/${params.id}`)
-
-        } catch (error) {
-            toast.error('Failed to create event')
-        }
+            loading: "Creating Event...",
+            error: "Could Not create Event. Are you admin?"
+        })
     }
-
+    if (loading) {
+        return (
+          <div className="flex w-screen h-screen justify-center items-center gap-3">
+            <Spinner size="large" />
+          </div>
+        )
+    }
     return (
         <div className="py-2 flex flex-col gap-10 min-h-screen items-center justify-center bg-gray-900">
             <Form {...form}>
@@ -233,7 +227,6 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
                             />
                         </>
                     )}
-
                     <Button type="submit">Create Event</Button>
                 </form>
             </Form>
