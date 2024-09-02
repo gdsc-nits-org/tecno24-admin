@@ -13,7 +13,7 @@ import { Button } from "~/components/ui/button";
 import { useQuery } from '@tanstack/react-query';
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { env } from "~/env";
-import { useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -28,8 +28,25 @@ import { auth } from "~/app/utils/firebase";
 import { Spinner } from "~/components/ui/spinner";
 import { User } from "firebase/auth";
 import { useRouter } from "next/navigation";
+import FuzzySearch from "fuzzy-search"
+import { CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandSeparator, Command } from "~/components/ui/command";
+
 export const runtime = "edge";
 
+interface UserResponse {
+    balance: number;
+    collegeName: string;
+    email: string;
+    firebaseId: string;
+    firstName: string;
+    id: string;
+    imageUrl: string;
+    lastName: string;
+    middleName: string;
+    phoneNumber: string;
+    registrationId: string;
+    username: string;
+}
 
 interface TeamMember {
     id: string;
@@ -84,11 +101,8 @@ interface Event {
     registrationEndTime: string;
     extraQuestions: string[];
     module: Module;
-}
-
-interface GetApiName {
-    status: string;
-    msg: Event;
+    organizers: UserResponse[];
+    managers: UserResponse[];
 }
 
 interface GetApiTeam {
@@ -97,9 +111,9 @@ interface GetApiTeam {
 }
 
 
-const fetchEventName = async (id: string) => {
-    const { data } = await axios.get<GetApiName>(`${env.NEXT_PUBLIC_API_URL}/api/event/${id}`);
-    return data.msg.name;
+const fetchEvent = async (id: string) => {
+    const { data } = await axios.get<{ msg: Event }>(`${env.NEXT_PUBLIC_API_URL}/api/event/${id}`);
+    return data.msg;
 };
 
 const fetchTeams = async (id: string, user: User) => {
@@ -111,6 +125,15 @@ const fetchTeams = async (id: string, user: User) => {
     });
     return data.msg;
 };
+
+const fetchAllUsers = async (token: string) => {
+    const { data } = await axios.get<{ msg: UserResponse[] }>(`${env.NEXT_PUBLIC_API_URL}/api/user`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    });
+    return data.msg;
+}
 
 async function addOrganizer(userId: string, eventId: string, token: string | undefined) {
     const data = {
@@ -129,12 +152,19 @@ async function addOrganizer(userId: string, eventId: string, token: string | und
 }
 
 const Event = ({ params }: { params: EventParams }) => {
-    const [user, loading] = useAuthState(auth)
+    const [user, loading] = useAuthState(auth);
     const router = useRouter()
-    const { data: eventName, error: nameError, isLoading: nameLoading } = useQuery({
-        queryKey: ['eventName', params.id],
-        queryFn: () => fetchEventName(params.id),
+    const { data: event, error: eventError, isLoading: eventLoading } = useQuery({
+        queryKey: ['event', params.id],
+        queryFn: () => fetchEvent(params.id),
     });
+
+    const [organizers, setOrganizers] = useState<UserResponse[]>([]);
+    console.log(organizers)
+    useEffect(() => {
+        if(eventLoading || eventError || !event) return;
+        setOrganizers(prevOrganizers => [...prevOrganizers, ...event!.organizers])
+    }, [event, eventError, eventLoading])
 
     const { data: teams, error: teamsError, isLoading: teamsLoading } = useQuery({
         queryKey: ['eventTeams', params.id],
@@ -143,6 +173,18 @@ const Event = ({ params }: { params: EventParams }) => {
 
     const [userId, setUserId] = useState('');
     const [open, setOpen] = useState(false);
+
+    const [organizer, setOrganizer] = useState<string>("");
+
+    const [allUsers, setAllUsers] = useState<UserResponse[]>([]);
+    useEffect(() => {
+        (async () => {
+            const token = await user?.getIdToken();
+            if(!token) return; 
+            setAllUsers(await fetchAllUsers(token))
+        })()
+    }, [user])
+
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -218,18 +260,18 @@ const Event = ({ params }: { params: EventParams }) => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `${eventName}`);
+        link.setAttribute('download', `${event?.name}`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
 
-    if (nameError || teamsError) {
+    if (eventError || teamsError) {
         toast.error("Error Fetching Event Data. Are you Event Organizer?")
         router.push("/dashboard")
     }
 
-    if (loading || nameLoading || teamsLoading) {
+    if (loading || eventLoading || teamsLoading) {
         return (
           <div className="flex w-screen h-screen justify-center items-center gap-3">
             <Spinner size="large" />
@@ -239,65 +281,90 @@ const Event = ({ params }: { params: EventParams }) => {
 
 
     return (
-        <main className="flex flex-col justify-center items-center h-screen p-4">
-            <div className="flex flex-row justify-center items-center w-full text-4xl font-mono font-bold uppercase py-8 my-10 text-center">
-                {eventName}
-            </div>
-            {teams?.map((team, teamIndex) => (
-                <div key={team.id} className="w-full max-w-4xl p-4 mb-6">
-                    <Table className="w-full shadow-md rounded-lg">
-                        <TableCaption className="text-left py-2 font-semibold">{`Team ${teamIndex + 1}: ${team.teamName}`}</TableCaption>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[50px]">Sl No.</TableHead>
-                                <TableHead>Team Name</TableHead>
-                                <TableHead>Team Member Name</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {team.members.map((member, memberIndex) => (
-                                <TableRow key={member.id}>
-                                    <TableCell className="font-medium">{memberIndex + 1}</TableCell>
-                                    <TableCell>{team.teamName}</TableCell>
-                                    <TableCell>{`${member.firstName} ${member.middleName ? member.middleName + ' ' : ''}${member.lastName}`}</TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            ))}
-            <div className="flex flex-row items-center justify-center gap-12">
-                <Button onClick={downloadCSV} className="mt-6 text-lg font-mono font-bold" variant="outline">
-                    Download
-                </Button>
-                <Dialog open={open} onOpenChange={setOpen}>
-                    <DialogTrigger asChild>
-                        <Button className="mt-6 text-lg font-mono font-bold" variant="outline">
-                            Add Event Organiser
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Enter Event Organiser User ID</DialogTitle>
-                            <DialogDescription>
-                                Please enter the User ID of the person you wish to add as an event organiser.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleSubmit} className="flex flex-row items-center justify-center gap-5">
+      <main className="flex h-screen flex-col items-center justify-center p-4">
+        <div className="my-10 flex w-full flex-row items-center justify-center py-8 text-center font-mono text-4xl font-bold uppercase">
+          {event?.name}
+        </div>
+        {teams?.map((team, teamIndex) => (
+          <div key={team.id} className="mb-6 w-full max-w-4xl p-4">
+            <Table className="w-full rounded-lg shadow-md">
+              <TableCaption className="py-2 text-left font-semibold">{`Team ${teamIndex + 1}: ${team.teamName}`}</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[50px]">Sl No.</TableHead>
+                  <TableHead>Team Name</TableHead>
+                  <TableHead>Team Member Name</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {team.members.map((member, memberIndex) => (
+                  <TableRow key={member.id}>
+                    <TableCell className="font-medium">
+                      {memberIndex + 1}
+                    </TableCell>
+                    <TableCell>{team.teamName}</TableCell>
+                    <TableCell>{`${member.firstName} ${member.middleName ? member.middleName + " " : ""}${member.lastName}`}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        ))}
+        <div className="flex flex-row items-center justify-center gap-12">
+          <Button
+            onClick={downloadCSV}
+            className="mt-6 font-mono text-lg font-bold"
+            variant="outline"
+          >
+            Download
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="mt-6 font-mono text-lg font-bold"
+                variant="outline"
+              >
+                Add Event Organiser
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Enter Event Organiser User ID</DialogTitle>
+                <DialogDescription>
+                  Please enter the username of the person you wish to add as an
+                  event organiser.
+                </DialogDescription>
+              </DialogHeader>
+              <Command value={organizer} onValueChange={setOrganizer}>
+                <CommandInput placeholder="Type a command or search..." />
+                <CommandList>
+                  <CommandEmpty>No results found.</CommandEmpty>
+                  <CommandGroup>
+                    {allUsers
+                      .filter(user => !organizers.some(org => org.userId === user.id))
+                      .map((user) => (
+                        <CommandItem onSelect={() => console.log(user)}>
+                          {`${user.username} - ${user.firstName} ${user.lastName}`}
+                        </CommandItem>
+                      ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+              {/* <form onSubmit={handleSubmit} className="flex flex-row items-center justify-center gap-5">
                             <input
                                 className="text-black"
                                 type="text"
                                 value={userId}
-                                onChange={(e) => setUserId(e.target.value)}
+                                onChange={handleInputChange}
                                 placeholder="User ID"
                                 required
                             />
                             <Button type="submit" variant="outline">Submit</Button>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-            </div>
-        </main>
+                        </form> */}
+            </DialogContent>
+          </Dialog>
+        </div>
+      </main>
     );
 };
 
