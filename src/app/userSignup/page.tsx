@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "../utils/firebase";
 import { env } from "~/env";
@@ -78,8 +78,8 @@ const CompleteProfile = () => {
                     return "User Created Successfully"
                 },
                 loading: "Creating User...",
-                error: (e) => {
-                    return e.response.data.msg
+                error: (e: AxiosError<{msg: string}>) => {
+                    return e.response?.data.msg
                 }
             })
         }

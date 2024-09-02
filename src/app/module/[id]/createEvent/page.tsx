@@ -4,7 +4,7 @@ import { useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import axios from "axios"
+import axios, { AxiosError } from "axios"
 
 import { Button } from "~/components/ui/button"
 import {
@@ -95,8 +95,8 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
                 return "Event created successfully"
             },
             loading: "Creating Event...",
-            error: (e) => {
-                return e.response.data.msg
+            error: (e: AxiosError<{msg: string}>) => {
+                return e.response?.data.msg
             }
         })
     }

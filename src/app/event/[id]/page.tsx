@@ -11,7 +11,7 @@ import {
 } from "~/components/ui/table";
 import { Button } from "~/components/ui/button";
 import { useQuery } from '@tanstack/react-query';
-import axios from "axios";
+import axios, { AxiosError, AxiosResponse } from "axios";
 import { env } from "~/env";
 import { useState } from "react";
 import {
@@ -155,8 +155,8 @@ const Event = ({ params }: { params: EventParams }) => {
                     return "Organizer Added Successfully";
                 },
                 loading: "Adding Organizer",
-                error: (e) => {
-                    return e.response.data.msg
+                error: (e: AxiosError<{status: string, msg: string}>) => {
+                    return e.response?.data.msg
                 }
             })
         } else {
