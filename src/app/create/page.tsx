@@ -75,8 +75,8 @@ export default function CreateModuleForm({ params }: { params: moduleParams }) {
                 }, 200)
                 return `Module ${data.name} has been created`
             },
-            error: () => {
-                return "Error Creating Module. Are you Admin?"
+            error: (e) => {
+                return e.response.data.msg
             }
         })
     }

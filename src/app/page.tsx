@@ -48,13 +48,8 @@ export default function HomePage() {
     )
   }
   if (user) {
-    return (
-      <div>
-        You are signed in as {_user?.displayName}. <Link href={"/dashboard"}>
-      Dashboard
-    </Link>
-      </div>
-    );
+    router.push("/dashboard");
+    return;
   }
   if(!_user)
   return (

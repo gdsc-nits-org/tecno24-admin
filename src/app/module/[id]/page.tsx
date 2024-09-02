@@ -90,9 +90,9 @@ const Module = ({ params }: { params: moduleParams }) => {
         queryFn: () => fetchData(params.id),
     });
 
-    if(isSuccess){
-        toast.success("Events fetched successfully")
-    }
+    // if(isSuccess){
+    //     toast.success("Events fetched successfully")
+    // }
     if(isError || eventsError){
         toast.error("Failed to fetch events")
     }

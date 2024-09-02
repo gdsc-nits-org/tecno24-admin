@@ -53,15 +53,13 @@ export default function Dashboard() {
     toast.promise(
       refetch(),
       {
-        success: "Modules Fetched Successfully",
         error: "Error Loading Modules",
-        loading: "Loading Modules"
       }
     )
   }, [refetch])
 
   if (error || queryError) {
-    return <div>There was some error. Please contact support</div>;
+    return <div>There was some error. Please contact support: tech@tecnoesis.co.in </div>;
   }
 
   if (loading || isLoading) {

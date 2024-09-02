@@ -78,7 +78,9 @@ const CompleteProfile = () => {
                     return "User Created Successfully"
                 },
                 loading: "Creating User...",
-                error: "Error Creating User."
+                error: (e) => {
+                    return e.response.data.msg
+                }
             })
         }
     };

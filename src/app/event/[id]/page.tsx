@@ -155,7 +155,9 @@ const Event = ({ params }: { params: EventParams }) => {
                     return "Organizer Added Successfully";
                 },
                 loading: "Adding Organizer",
-                error: "Failed to add Organizer. Are you Admin?"
+                error: (e) => {
+                    return e.response.data.msg
+                }
             })
         } else {
             toast.error('UserId is required.');

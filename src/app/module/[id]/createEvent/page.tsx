@@ -95,7 +95,9 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
                 return "Event created successfully"
             },
             loading: "Creating Event...",
-            error: "Could Not create Event. Are you admin?"
+            error: (e) => {
+                return e.response.data.msg
+            }
         })
     }
     if (loading) {
