@@ -86,6 +86,7 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
     })
     const router = useRouter();
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
+        console.log('Form Data:', data);
         const token = await user?.getIdToken()
         toast.promise(postData(data, token, params.id), {
             success: () => {
@@ -229,12 +230,111 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
                     )}
                     <FormField
                         control={form.control}
+                        name="posterImage"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Poster Image URL</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="https://gravatar.com/image.png" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="attendanceIncentive"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Attendance Incentive</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        placeholder="1"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="registrationIncentive"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Registration Incentive</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        placeholder="1"
+                                        {...field}
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
                         name="prizeDescription"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Event Description</FormLabel>
+                                <FormLabel>Prize Description</FormLabel>
                                 <FormControl>
-                                    <Textarea placeholder="Short Description of Prizes" {...field} />
+                                    <Textarea placeholder="Describe the prizes" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="stagesDescription"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Stages Description</FormLabel>
+                                <FormControl>
+                                    <Textarea placeholder="Describe the stages" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="venue"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Venue</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Enter Venue" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="lat"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Latitude</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="24.829460" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="lng"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Longitude</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="92.787468" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
