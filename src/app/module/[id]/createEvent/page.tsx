@@ -95,16 +95,16 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
                 return "Event created successfully"
             },
             loading: "Creating Event...",
-            error: (e: AxiosError<{msg: string}>) => {
+            error: (e: AxiosError<{ msg: string }>) => {
                 return e.response?.data.msg
             }
         })
     }
     if (loading) {
         return (
-          <div className="flex w-screen h-screen justify-center items-center gap-3">
-            <Spinner size="large" />
-          </div>
+            <div className="flex w-screen h-screen justify-center items-center gap-3">
+                <Spinner size="large" />
+            </div>
         )
     }
     return (
@@ -227,6 +227,19 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
                             />
                         </>
                     )}
+                    <FormField
+                        control={form.control}
+                        name="prizeDescription"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Event Description</FormLabel>
+                                <FormControl>
+                                    <Textarea placeholder="Short Description of Prizes" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                     <Button type="submit">Create Event</Button>
                 </form>
             </Form>
