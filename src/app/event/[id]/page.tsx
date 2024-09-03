@@ -33,7 +33,25 @@ import { CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, Com
 
 export const runtime = "edge";
 
+interface _User {
+    email: string,
+    firstName: string,
+    middleName: string,
+    lastName: string,
+    phoneNumber: string,
+    username: string
+    id: string,
+    imageUrl: string
+}
+
 interface UserResponse {
+    eventId: string;
+    id: string;
+    userId: string;
+    user: _User
+}
+
+interface allUserResponse {
     balance: number;
     collegeName: string;
     email: string;
@@ -127,12 +145,16 @@ const fetchTeams = async (id: string, user: User) => {
 };
 
 const fetchAllUsers = async (token: string) => {
-    const { data } = await axios.get<{ msg: UserResponse[] }>(`${env.NEXT_PUBLIC_API_URL}/api/user`, {
-        headers: {
-            Authorization: `Bearer ${token}`
-        }
-    });
-    return data.msg;
+    try {
+        const { data } = await axios.get<{ msg: allUserResponse[] }>(`${env.NEXT_PUBLIC_API_URL}/api/user`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        return data.msg;
+    } catch(e) {
+        return []
+    }
 }
 
 async function addOrganizer(userId: string, eventId: string, token: string | undefined) {
@@ -160,10 +182,9 @@ const Event = ({ params }: { params: EventParams }) => {
     });
 
     const [organizers, setOrganizers] = useState<UserResponse[]>([]);
-    console.log(organizers)
     useEffect(() => {
         if(eventLoading || eventError || !event) return;
-        setOrganizers(prevOrganizers => [...prevOrganizers, ...event!.organizers])
+        setOrganizers(prevOrganizers => [...prevOrganizers, ...event.organizers])
     }, [event, eventError, eventLoading])
 
     const { data: teams, error: teamsError, isLoading: teamsLoading } = useQuery({
@@ -176,9 +197,9 @@ const Event = ({ params }: { params: EventParams }) => {
 
     const [organizer, setOrganizer] = useState<string>("");
 
-    const [allUsers, setAllUsers] = useState<UserResponse[]>([]);
+    const [allUsers, setAllUsers] = useState<allUserResponse[]>([]);
     useEffect(() => {
-        (async () => {
+        void (async () => {
             const token = await user?.getIdToken();
             if(!token) return; 
             setAllUsers(await fetchAllUsers(token))
@@ -186,12 +207,11 @@ const Event = ({ params }: { params: EventParams }) => {
     }, [user])
 
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
+    const handleSubmit = async (username: string) => {
         const token = await user?.getIdToken();
 
-        if (userId) {
-            toast.promise(addOrganizer(userId, params.id, token), {
+        if (username) {
+            toast.promise(addOrganizer(username, params.id, token), {
                 success: () => {
                     setOpen(false)
                     return "Organizer Added Successfully";
@@ -202,7 +222,7 @@ const Event = ({ params }: { params: EventParams }) => {
                 }
             })
         } else {
-            toast.error('UserId is required.');
+            toast.error('Username is required.');
         }
     };
 
@@ -282,8 +302,23 @@ const Event = ({ params }: { params: EventParams }) => {
 
     return (
       <main className="flex h-screen flex-col items-center justify-center p-4">
-        <div className="my-10 flex w-full flex-row items-center justify-center py-8 text-center font-mono text-4xl font-bold uppercase">
+        <div className="my-1 flex w-full flex-row items-center justify-center text-center font-mono text-4xl font-bold uppercase">
           {event?.name}
+        </div>
+        <div className="my-1 flex w-full flex-col items-center justify-center py-2 text-center font-mono text-xl font-bold uppercase">
+            Organisers
+            {<br />}
+            <div>
+                {
+                    organizers.map((organizer) => {
+                        return (
+                            <div className="text-sm font-normal flex flex-col gap-2" key={organizer.id}>
+                                {organizer.user.username}
+                            </div>
+                        )
+                    })
+                }
+            </div>
         </div>
         {teams?.map((team, teamIndex) => (
           <div key={team.id} className="mb-6 w-full max-w-4xl p-4">
@@ -329,7 +364,7 @@ const Event = ({ params }: { params: EventParams }) => {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Enter Event Organiser User ID</DialogTitle>
+                <DialogTitle>Enter Event Organiser Username</DialogTitle>
                 <DialogDescription>
                   Please enter the username of the person you wish to add as an
                   event organiser.
@@ -340,27 +375,19 @@ const Event = ({ params }: { params: EventParams }) => {
                 <CommandList>
                   <CommandEmpty>No results found.</CommandEmpty>
                   <CommandGroup>
-                    {allUsers
+                    {
+                    allUsers
                       .filter(user => !organizers.some(org => org.userId === user.id))
                       .map((user) => (
-                        <CommandItem onSelect={() => console.log(user)}>
-                          {`${user.username} - ${user.firstName} ${user.lastName}`}
+                        <CommandItem key={user.id} onSelect={async () => {
+                            await handleSubmit(user.username)
+                        }}>
+                          {`${user.username} - ${user.firstName} ${user.lastName} (${user.registrationId})`}
                         </CommandItem>
                       ))}
                   </CommandGroup>
                 </CommandList>
               </Command>
-              {/* <form onSubmit={handleSubmit} className="flex flex-row items-center justify-center gap-5">
-                            <input
-                                className="text-black"
-                                type="text"
-                                value={userId}
-                                onChange={handleInputChange}
-                                placeholder="User ID"
-                                required
-                            />
-                            <Button type="submit" variant="outline">Submit</Button>
-                        </form> */}
             </DialogContent>
           </Dialog>
         </div>
