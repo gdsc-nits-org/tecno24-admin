@@ -23,7 +23,7 @@ export default function HomePage() {
     const checkUserFirstTime = async () => {
       if (_user) {
         try {
-          const token = _user.getIdToken();
+          const token = await _user.getIdToken();
           const res = await axios.get<{ msg: UserResponse }>(
             `${env.NEXT_PUBLIC_API_URL}/api/user/me`,
             {
