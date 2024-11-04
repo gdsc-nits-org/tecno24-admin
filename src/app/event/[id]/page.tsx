@@ -192,8 +192,6 @@ const Event = ({ params }: { params: EventParams }) => {
     queryKey: ['eventTeams', params.id],
     queryFn: () => fetchTeams(params.id, user!),
   });
-
-  const [userId, setUserId] = useState('');
   const [open, setOpen] = useState(false);
 
   const [organizer, setOrganizer] = useState<string>("");
@@ -248,7 +246,7 @@ const Event = ({ params }: { params: EventParams }) => {
     const filteredData = teams?.flatMap((team) => {
       const teamMembers = team?.members.map((member, memberIndex) => ({
         "Sl No.": memberIndex + 1,
-        "Team Name": '',
+        "Team Name": `${team?.teamName}`,
         "Name": `${member.user.firstName} ${member.user.middleName ? member.user.middleName + ' ' : ''}${member.user.lastName}`,
         "Email": member.user.email,
         "Team Member Phone": member.user.phoneNumber,
