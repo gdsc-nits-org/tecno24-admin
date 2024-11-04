@@ -192,8 +192,6 @@ const Event = ({ params }: { params: EventParams }) => {
     queryKey: ['eventTeams', params.id],
     queryFn: () => fetchTeams(params.id, user!),
   });
-
-  const [userId, setUserId] = useState('');
   const [open, setOpen] = useState(false);
 
   const [organizer, setOrganizer] = useState<string>("");
