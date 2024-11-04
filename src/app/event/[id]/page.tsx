@@ -248,7 +248,7 @@ const Event = ({ params }: { params: EventParams }) => {
     const filteredData = teams?.flatMap((team) => {
       const teamMembers = team?.members.map((member, memberIndex) => ({
         "Sl No.": memberIndex + 1,
-        "Team Name": '',
+        "Team Name": `${team?.teamName}`,
         "Name": `${member.user.firstName} ${member.user.middleName ? member.user.middleName + ' ' : ''}${member.user.lastName}`,
         "Email": member.user.email,
         "Team Member Phone": member.user.phoneNumber,
