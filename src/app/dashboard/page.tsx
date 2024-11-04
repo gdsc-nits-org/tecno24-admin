@@ -95,15 +95,15 @@ export default function Dashboard() {
         <div className="flex w-3/4 flex-row flex-wrap items-center justify-center gap-2">
           {data?.msg?.map((module) => (
             <Link href={`/module/${module.id}`} key={module.id}>
-              <Card className="h-[350px] w-[350px] overflow-y-clip">
+              <Card className="h-[350px] w-[350px] overflow-y-clip hover:border-cyan-600">
                 <CardHeader>
-                  <CardTitle>{module.name}</CardTitle>
-                  <CardContent>
-                    <p>Events: {module.events.length}</p>
+                  <CardTitle className="text-cyan-600">{module.name}</CardTitle>
+                  <CardContent className="mx-0 px-0 text-left">
+                    Events: {module.events.length}
                   </CardContent>
                   <CardDescription>
                     {module.description == " " ? (
-                      <p className="text-red-500">No Description</p>
+                      <p className="truncate text-red-500">No Description</p>
                     ) : (
                       module.description
                     )}
