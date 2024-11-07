@@ -281,7 +281,7 @@ const Event = ({ params }: { params: EventParams }) => {
 
 
   return (
-    <main className="flex h-screen flex-col items-center justify-center p-4">
+    <main className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="my-1 flex w-full flex-row items-center justify-center text-center font-mono text-4xl font-bold uppercase">
         {event?.name}
       </div>
