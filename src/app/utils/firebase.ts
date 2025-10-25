@@ -2,16 +2,16 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyAQQSh1SzfH2g_5qFUr_s6AbwFAkzl71Bo",
-  authDomain: "tecnoesis-api.firebaseapp.com",
-  projectId: "tecnoesis-api",
-  storageBucket: "tecnoesis-api.appspot.com",
-  messagingSenderId: "469689094900",
-  appId: "1:469689094900:web:f48700045a45f6f608c4a1",
-  measurementId: "G-1SB1EPQGFX"
-};
 
+const firebaseConfig = {
+  apiKey: "AIzaSyBOm88RowuTBraW8ruA6pOfRQzv5xf2ZIM",
+  authDomain: "tecnoesis25.firebaseapp.com",
+  projectId: "tecnoesis25",
+  storageBucket: "tecnoesis25.firebasestorage.app",
+  messagingSenderId: "873389209547",
+  appId: "1:873389209547:web:e51d0397944f5a99ef284e",
+  measurementId: "G-T4H1F9X9CY"
+};
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app)

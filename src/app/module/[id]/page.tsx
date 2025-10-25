@@ -28,14 +28,10 @@ interface event {
   posterImage: string;
   maxTeamSize: number;
   minTeamSize: number;
-  attendanceIncentive: number;
-  registrationIncentive: number;
   prizeDescription: string;
   stagesDescription: string;
   description: string;
   venue: string;
-  lat: string;
-  lng: string;
   registrationStartTime: string;
   registrationEndTime: string;
   extraQuestions?: object[];
