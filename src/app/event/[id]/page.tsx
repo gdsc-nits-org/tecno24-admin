@@ -243,16 +243,35 @@ const Event = ({ params }: { params: EventParams }) => {
   };
 
   const downloadCSV = () => {
-    const filteredData = teams?.flatMap((team) => {
-      const teamMembers = team?.members.map((member, memberIndex) => ({
-        "Sl No.": memberIndex + 1,
-        "Team Name": `${team?.teamName}`,
-        "Name": `${member.user.firstName} ${member.user.middleName ? member.user.middleName + ' ' : ''}${member.user.lastName}`,
-        "Email": member.user.email,
-        "Team Member Phone": member.user.phoneNumber,
-        "College Name": member.user.collegeName
-      }));
-      return [...teamMembers, {}, {}];
+    const isSoloEvent = event?.maxTeamSize === 1;
+
+    const filteredData = teams?.map((team, teamIndex) => {
+      if (isSoloEvent) {
+        // Solo event format: Sl No., Name, Mobile Number
+        const member = team.members[0];
+        return {
+          "Sl No.": teamIndex + 1,
+          "Name": member ? `${member.user.firstName} ${member.user.middleName ? member.user.middleName + ' ' : ''}${member.user.lastName}` : '',
+          "Mobile Number": member?.user.phoneNumber ?? ''
+        };
+      } else {
+        // Group event format: Sl No., Team Name, Team Leader Name, Member 1, Member 2, ..., Mobile Number
+        const rowData: Record<string, string | number> = {
+          "Sl No.": teamIndex + 1,
+          "Team Name": team.teamName,
+          "Team Leader Name": team.members[0] ? `${team.members[0].user.firstName} ${team.members[0].user.middleName ? team.members[0].user.middleName + ' ' : ''}${team.members[0].user.lastName}` : ''
+        };
+
+        // Add members starting from Member 1 (second member onwards)
+        team.members.slice(1).forEach((member, idx) => {
+          rowData[`Member ${idx + 1} Name`] = `${member.user.firstName} ${member.user.middleName ? member.user.middleName + ' ' : ''}${member.user.lastName}`;
+        });
+
+        // Add team leader's mobile number
+        rowData["Mobile Number of Team Leader"] = team.members[0]?.user.phoneNumber ?? '';
+
+        return rowData;
+      }
     }) ?? [];
 
     const csvData = jsonToCSV([...filteredData]);
@@ -260,7 +279,7 @@ const Event = ({ params }: { params: EventParams }) => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `${event?.name}`);
+    link.setAttribute('download', `${event?.name}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -279,6 +298,7 @@ const Event = ({ params }: { params: EventParams }) => {
     )
   }
 
+  const isSoloEvent = event?.maxTeamSize === 1;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
@@ -306,20 +326,50 @@ const Event = ({ params }: { params: EventParams }) => {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[50px]">Sl No.</TableHead>
-                <TableHead>Team Name</TableHead>
-                <TableHead>Team Member Name</TableHead>
+                {isSoloEvent ? (
+                  <>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Mobile Number</TableHead>
+                  </>
+                ) : (
+                  <>
+                    <TableHead>Team Name</TableHead>
+                    <TableHead>Team Leader Name</TableHead>
+                    {team.members.slice(1).map((_, idx) => (
+                      <TableHead key={idx}>Member {idx + 1} Name</TableHead>
+                    ))}
+                    <TableHead>Team Leader Mobile Number</TableHead>
+                  </>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {team.members.map((member, memberIndex) => (
-                <TableRow key={memberIndex}>
-                  <TableCell className="font-medium">
-                    {memberIndex + 1}
-                  </TableCell>
-                  <TableCell>{team.teamName}</TableCell>
-                  <TableCell> {member.user.firstName} {member.user.middleName} {member.user.lastName}</TableCell>
-                </TableRow>
-              ))}
+              <TableRow>
+                <TableCell className="font-medium">
+                  {teamIndex + 1}
+                </TableCell>
+                {isSoloEvent ? (
+                  <>
+                    <TableCell>
+                      {team.members[0] ? `${team.members[0].user.firstName} ${team.members[0].user.middleName ? team.members[0].user.middleName + ' ' : ''}${team.members[0].user.lastName}` : ''}
+                    </TableCell>
+                    <TableCell>{team.members[0]?.user.phoneNumber}</TableCell>
+                  </>
+                ) : (
+                  <>
+                    <TableCell>{team.teamName}</TableCell>
+                    <TableCell>
+                      {team.members[0] ? `${team.members[0].user.firstName} ${team.members[0].user.middleName ? team.members[0].user.middleName + ' ' : ''}${team.members[0].user.lastName}` : ''}
+                    </TableCell>
+                    {team.members.slice(1).map((member, idx) => (
+                      <TableCell key={idx}>
+                        {`${member.user.firstName} ${member.user.middleName ? member.user.middleName + ' ' : ''}${member.user.lastName}`}
+                      </TableCell>
+                    ))}
+                    <TableCell>{team.members[0]?.user.phoneNumber}</TableCell>
+                  </>
+                )}
+              </TableRow>
             </TableBody>
           </Table>
         </div>

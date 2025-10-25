@@ -1,6 +1,6 @@
 'use client'
 import { useRouter } from "next/navigation";
-import { zodResolver } from "@hookform/resolvers/zod"
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import axios, { AxiosError } from "axios"
@@ -30,9 +30,10 @@ const formSchema = z.object({
     description: z.string().min(10, {
         message: "Description must be at least 10 characters.",
     }),
-    iconImage: z.string().url({message: "Must be valid URL"}),
-    coverImage: z.string().url({message: "Must be valid URL"}),
-    thirdPartyURL: z.string().url({message: "Must be valid URL"})
+    // files will be validated client-side in onSubmit (FileList), keep loose typing here
+    iconImage: z.any(),
+    coverImage: z.any(),
+    thirdPartyURL: z.string().optional()
 })
 
 
@@ -40,34 +41,72 @@ interface moduleParams {
     id: string;
 }
 
-async function postData(data: z.infer<typeof formSchema>, token: string | undefined) {
+type FormValues = {
+    name: string;
+    description: string;
+    iconImage?: FileList | null;
+    coverImage?: FileList | null;
+    thirdPartyURL?: string;
+}
+
+async function postData(data: FormData, token: string | undefined) {
     const response = await axios.post(`${env.NEXT_PUBLIC_API_URL}/api/module/create`, data,
         {
             headers: {
-                Authorization: `Bearer ${token}`
+                Authorization: `Bearer ${token}`,
+                // Let browser set multipart boundary; do not set Content-Type here
             }
         }
     )
     return response
 }
 
-export default function CreateModuleForm({ params }: { params: moduleParams }) {
+export default function CreateModuleForm({ params: _params }: { params: moduleParams }) {
     const [user, loading] = useAuthState(auth);
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: "",
             description: "",
-            iconImage: "",
-            coverImage: "",
+            iconImage: undefined,
+            coverImage: undefined,
             thirdPartyURL: ""
         },
     })
     const router = useRouter();
-    const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    const onSubmit = async (data: FormValues) => {
+        // data.iconImage and data.coverImage are expected to be FileList objects
         const token = await user?.getIdToken();
-        toast.promise(postData(data, token), {
+
+        const iconFile = data.iconImage?.[0];
+        const coverFile = data.coverImage?.[0];
+
+        if (!iconFile || !coverFile) {
+            toast.error("Please provide both an icon image and a cover image.");
+            return;
+        }
+
+        const MAX_SIZE_MB = 2;
+        const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+
+        if (iconFile.size > MAX_SIZE_BYTES) {
+            toast.error(`Icon image must be less than ${MAX_SIZE_MB}MB`);
+            return;
+        }
+        if (coverFile.size > MAX_SIZE_BYTES) {
+            toast.error(`Cover image must be less than ${MAX_SIZE_MB}MB`);
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("name", data.name);
+        formData.append("description", data.description);
+        if (data.thirdPartyURL) formData.append("thirdPartyURL", data.thirdPartyURL);
+        formData.append("iconImage", iconFile);
+        formData.append("coverImage", coverFile);
+
+        toast.promise(postData(formData, token), {
             loading: "Creating Module>...",
             success: () => {
                 setTimeout(() => {
@@ -75,16 +114,16 @@ export default function CreateModuleForm({ params }: { params: moduleParams }) {
                 }, 200)
                 return `Module ${data.name} has been created`
             },
-            error: (e: AxiosError<{msg: string}>) => {
+            error: (e: AxiosError<{ msg: string }>) => {
                 return e.response?.data.msg
             }
         })
     }
     if (loading) {
         return (
-          <div className="flex w-screen h-screen justify-center items-center gap-3">
-            <Spinner size="large" />
-          </div>
+            <div className="flex w-screen h-screen justify-center items-center gap-3">
+                <Spinner size="large" />
+            </div>
         )
     }
 
@@ -124,9 +163,14 @@ export default function CreateModuleForm({ params }: { params: moduleParams }) {
                         name="iconImage"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Icon Image (URL)</FormLabel>
+                                <FormLabel>Icon Image (file)</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="https://gravatar.com/image.png" {...field} />
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => field.onChange(e.target.files)}
+                                        className="w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gray-700 file:text-gray-100"
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -137,9 +181,14 @@ export default function CreateModuleForm({ params }: { params: moduleParams }) {
                         name="coverImage"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Cover Image (URL)</FormLabel>
+                                <FormLabel>Cover Image (file)</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="https://gravatar.com/image.png" {...field} />
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={(e) => field.onChange(e.target.files)}
+                                        className="w-full text-sm text-gray-300 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:bg-gray-700 file:text-gray-100"
+                                    />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

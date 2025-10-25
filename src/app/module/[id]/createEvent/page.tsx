@@ -1,114 +1,100 @@
 "use client";
+
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 import axios, { AxiosError } from "axios";
-
-import { Button } from "~/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "~/components/ui/form";
-import { Input } from "~/components/ui/input";
-import { Textarea } from "~/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { toast } from "sonner";
-import { Label } from "~/components/ui/label";
-import { env } from "~/env";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "~/app/utils/firebase";
+import { useAuthState } from "react-firebase-hooks/auth";
 import { Spinner } from "~/components/ui/spinner";
+import { Button } from "~/components/ui/button";
+
 export const runtime = "edge";
 
-const formSchema = z.object({
-  name: z.string().min(2, {
-    message: "Event name must be at least 2 characters.",
-  }),
-  description: z.string().min(10, {
-    message: "Description must be at least 10 characters.",
-  }),
-  registrationStartTime: z
-    .string()
-    .nonempty("Registration start time is required."),
-  registrationEndTime: z
-    .string()
-    .nonempty("Registration end time is required."),
-  minTeamSize: z.number().min(1).optional(),
-  maxTeamSize: z.number().min(1).optional(),
-  posterImage: z.string().url().optional(),
-  prizeDescription: z.string().optional(),
-  stagesDescription: z.string().optional(),
-  venue: z.string().optional(),
-  lat: z.string().optional(),
-  lng: z.string().optional(),
-  extraQuestions: z.array(z.object({}).strict()).optional(),
-});
-
-interface moduleParams {
-  id: string;
-}
-
-async function postData(
-  data: z.infer<typeof formSchema>,
-  token: string | undefined,
-  moduleId: string,
-) {
-  const response = await axios.post(
-    `${env.NEXT_PUBLIC_API_URL}/api/event/create`,
-    {
-      moduleId,
-      ...data,
-    },
-    { headers: { Authorization: `Bearer ${token}` } },
-  );
-  return response;
-}
-
-export default function CreateEventForm({ params }: { params: moduleParams }) {
-  const [eventType, setEventType] = useState("solo");
-  const [user, loading] = useAuthState(auth);
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: "",
-      description: "",
-      registrationStartTime: "",
-      registrationEndTime: "",
-      minTeamSize: 1,
-      maxTeamSize: 1,
-      posterImage: "",
-      prizeDescription: "",
-      stagesDescription: "",
-      venue: "",
-      lat: "",
-      lng: "",
-      extraQuestions: [{}],
-    },
+export default function CreateEventForm({ params }: { params: { id: string } }) {
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    registrationStartTime: "",
+    registrationEndTime: "",
+    minTeamSize: "",
+    maxTeamSize: "",
+    posterImage: null as File | null,
+    prizeDescription: "",
+    stagesDescription: "",
+    venue: "",
   });
+
+  const [user, loading] = useAuthState(auth);
   const router = useRouter();
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    console.log("Form Data:", data);
-    const token = await user?.getIdToken();
-    toast.promise(postData(data, token, params.id), {
-      success: () => {
-        setTimeout(() => {
-          router.push(`/module/${params.id}`);
-        }, 200);
-        return "Event created successfully";
-      },
-      loading: "Creating Event...",
-      error: (e: AxiosError<{ msg: string }>) => {
-        return e.response?.data.msg;
-      },
-    });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setFormData((prev) => ({ ...prev, posterImage: file }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const token = await user?.getIdToken();
+    if (!token) {
+      toast.error("You must be logged in to create an event.");
+      return;
+    }
+
+    const data = new FormData();
+
+    // Append fields individually to maintain proper types
+    data.append("name", formData.name);
+    data.append("description", formData.description);
+    data.append("registrationStartTime", formData.registrationStartTime);
+    data.append("registrationEndTime", formData.registrationEndTime);
+    data.append("minTeamSize", formData.minTeamSize);
+    data.append("maxTeamSize", formData.maxTeamSize);
+    data.append("prizeDescription", formData.prizeDescription);
+    data.append("stagesDescription", formData.stagesDescription);
+    data.append("venue", formData.venue);
+    data.append("moduleId", params.id);
+
+    // Append file if present
+    if (formData.posterImage) {
+      data.append("posterImage", formData.posterImage);
+    }
+
+    // Optional organizers (if needed later)
+    // data.append("organizers", JSON.stringify(["userId1", "userId2"]));
+
+    // Debug check
+    for (const [key, value] of data.entries()) {
+      console.log(key, value);
+    }
+
+    toast.promise(
+      axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/event/create`, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }),
+      {
+        loading: "Creating event...",
+        success: () => {
+          setTimeout(() => router.push(`/module/${params.id}`), 500);
+          return "Event created successfully";
+        },
+        error: (err: AxiosError<{ msg?: string }>) =>
+          err.response?.data?.msg ?? "An unexpected error occurred.",
+      }
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center gap-3">
@@ -116,214 +102,173 @@ export default function CreateEventForm({ params }: { params: moduleParams }) {
       </div>
     );
   }
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-10 bg-gray-900 py-2">
-      <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="w-full max-w-md space-y-8 rounded-lg bg-gray-800 p-6 shadow-md"
-        >
-          <FormField
-            control={form.control}
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-900 py-6">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md space-y-6 rounded-lg bg-gray-800 p-6 shadow-lg"
+      >
+        <h2 className="text-xl font-semibold text-white text-center">
+          Create New Event
+        </h2>
+
+        {/* Event Name */}
+        <div>
+          <label className="block text-sm font-medium text-white">
+            Event Name
+          </label>
+          <input
+            type="text"
             name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Event Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter event name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Enter event name"
+            required
+            className="mt-1 block w-full rounded-md bg-black text-white border border-gray-700 p-2"
           />
-          <FormField
-            control={form.control}
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="block text-sm font-medium text-white">
+            Description
+          </label>
+          <textarea
             name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Event Description</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Describe the event" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            value={formData.description}
+            onChange={handleChange}
+            placeholder="Describe the event"
+            required
+            className="mt-1 block w-full rounded-md bg-black text-white border border-gray-700 p-2"
           />
-          <FormField
-            control={form.control}
+        </div>
+
+        {/* Registration Start Time */}
+        <div>
+          <label className="block text-sm font-medium text-white">
+            Registration Start
+          </label>
+          <input
+            type="datetime-local"
             name="registrationStartTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Registration Start Time</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            value={formData.registrationStartTime}
+            onChange={handleChange}
+            required
+            className="mt-1 block w-full rounded-md border border-gray-700 p-2 text-black"
           />
+        </div>
 
-          <FormField
-            control={form.control}
+        {/* Registration End Time */}
+        <div>
+          <label className="block text-sm font-medium text-white">
+            Registration End
+          </label>
+          <input
+            type="datetime-local"
             name="registrationEndTime"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Registration End Time</FormLabel>
-                <FormControl>
-                  <Input type="datetime-local" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            value={formData.registrationEndTime}
+            onChange={handleChange}
+            required
+            className="mt-1 block w-full rounded-md border border-gray-700 p-2 text-black"
           />
+        </div>
 
-          <FormItem>
-            <FormLabel>Type of Event</FormLabel>
-            <FormControl>
-              <RadioGroup value={eventType} onValueChange={setEventType}>
-                <div className="flex flex-row gap-4">
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="solo" id="solo" />
-                    <Label htmlFor="solo">Solo</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="group" id="group" />
-                    <Label htmlFor="group">Group</Label>
-                  </div>
-                </div>
-              </RadioGroup>
-            </FormControl>
-          </FormItem>
+        {/* Team Sizes */}
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-white">
+              Min Team Size
+            </label>
+            <input
+              type="number"
+              name="minTeamSize"
+              value={formData.minTeamSize}
+              onChange={handleChange}
+              placeholder="e.g. 1"
+              required
+              className="mt-1 block w-full rounded-md bg-black text-white border border-gray-700 p-2"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-white">
+              Max Team Size
+            </label>
+            <input
+              type="number"
+              name="maxTeamSize"
+              value={formData.maxTeamSize}
+              onChange={handleChange}
+              placeholder="e.g. 5"
+              required
+              className="mt-1 block w-full rounded-md bg-black text-white border border-gray-700 p-2"
+            />
+          </div>
+        </div>
 
-          {eventType === "group" && (
-            <>
-              <FormField
-                control={form.control}
-                name="minTeamSize"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Minimum Team Size</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Minimum team size"
-                        value={field.value}
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value, 10) || 0)
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="maxTeamSize"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Maximum Team Size</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Maximum team size"
-                        value={field.value}
-                        onChange={(e) =>
-                          field.onChange(parseInt(e.target.value, 10) || 0)
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </>
-          )}
-          <FormField
-            control={form.control}
+        {/* Poster Image */}
+        <div>
+          <label className="block text-sm font-medium text-white">
+            Poster Image
+          </label>
+          <input
+            type="file"
             name="posterImage"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Poster Image URL</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="https://gravatar.com/image.png"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            accept="image/*"
+            onChange={handleFileChange}
+            required
+            className="mt-1 block w-full rounded-md bg-black text-white border border-gray-700 p-2"
           />
-          <FormField
-            control={form.control}
+        </div>
+
+        {/* Prize Description */}
+        <div>
+          <label className="block text-sm font-medium text-white">
+            Prize Description
+          </label>
+          <textarea
             name="prizeDescription"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Prize Description</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Describe the prizes" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            value={formData.prizeDescription}
+            onChange={handleChange}
+            placeholder="Describe prizes or rewards"
+            className="mt-1 block w-full rounded-md bg-black text-white border border-gray-700 p-2"
           />
-          <FormField
-            control={form.control}
+        </div>
+
+        {/* Stages Description */}
+        <div>
+          <label className="block text-sm font-medium text-white">
+            Stages Description
+          </label>
+          <textarea
             name="stagesDescription"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Stages Description</FormLabel>
-                <FormControl>
-                  <Textarea placeholder="Describe the stages" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            value={formData.stagesDescription}
+            onChange={handleChange}
+            placeholder="e.g., Round 1, Round 2..."
+            className="mt-1 block w-full rounded-md bg-black text-white border border-gray-700 p-2"
           />
-          <FormField
-            control={form.control}
+        </div>
+
+        {/* Venue */}
+        <div>
+          <label className="block text-sm font-medium text-white">
+            Venue
+          </label>
+          <input
+            type="text"
             name="venue"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Venue</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter Venue" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            value={formData.venue}
+            onChange={handleChange}
+            placeholder="Enter venue"
+            required
+            className="mt-1 block w-full rounded-md bg-black text-white border border-gray-700 p-2"
           />
-          <FormField
-            control={form.control}
-            name="lat"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Latitude</FormLabel>
-                <FormControl>
-                  <Input placeholder="24.829460" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="lng"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Longitude</FormLabel>
-                <FormControl>
-                  <Input placeholder="92.787468" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit">Create Event</Button>
-        </form>
-      </Form>
+        </div>
+
+        <Button type="submit" className="w-full">
+          Create Event
+        </Button>
+      </form>
     </div>
   );
 }
