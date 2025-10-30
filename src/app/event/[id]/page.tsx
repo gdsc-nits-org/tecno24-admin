@@ -3,7 +3,6 @@
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -28,7 +27,7 @@ import { auth } from "~/app/utils/firebase";
 import { Spinner } from "~/components/ui/spinner";
 import type { User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import { CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandSeparator, Command } from "~/components/ui/command";
+import { CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, Command } from "~/components/ui/command";
 
 export const runtime = "edge";
 
@@ -148,7 +147,7 @@ const fetchAllUsers = async (token: string) => {
       }
     });
     return data.msg;
-  } catch (e) {
+  } catch {
     return []
   }
 }
@@ -278,6 +277,7 @@ const Event = ({ params }: { params: EventParams }) => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
+    link.setAttribute('download', `${event?.name}.csv`);
     link.setAttribute('download', `${event?.name}.csv`);
     document.body.appendChild(link);
     link.click();
