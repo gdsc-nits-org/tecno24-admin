@@ -23,6 +23,9 @@ export default function CreateEventForm({ params }: { params: { id: string } }) 
     prizeDescription: "",
     stagesDescription: "",
     venue: "",
+    thirdPartyURL: "",
+    registrationFee: "",
+    upiQrCode: null as File | null,
   });
 
   const [user, loading] = useAuthState(auth);
@@ -37,7 +40,8 @@ export default function CreateEventForm({ params }: { params: { id: string } }) 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    setFormData((prev) => ({ ...prev, posterImage: file }));
+    const fieldName = e.target.name;
+    setFormData((prev) => ({ ...prev, [fieldName]: file }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,10 +66,15 @@ export default function CreateEventForm({ params }: { params: { id: string } }) 
     data.append("stagesDescription", formData.stagesDescription);
     data.append("venue", formData.venue);
     data.append("moduleId", params.id);
+    data.append("thirdPartyURL", formData.thirdPartyURL);
+    data.append("registrationFee", formData.registrationFee);
 
-    // Append file if present
+    // Append files if present
     if (formData.posterImage) {
       data.append("posterImage", formData.posterImage);
+    }
+    if (formData.upiQrCode) {
+      data.append("upiQrCode", formData.upiQrCode);
     }
 
     // Optional organizers (if needed later)
@@ -261,6 +270,52 @@ export default function CreateEventForm({ params }: { params: { id: string } }) 
             onChange={handleChange}
             placeholder="Enter venue"
             required
+            className="mt-1 block w-full rounded-md bg-black text-white border border-gray-700 p-2"
+          />
+        </div>
+
+        {/* Registration Fee */}
+        <div>
+          <label className="block text-sm font-medium text-white">
+            Registration Fee
+          </label>
+          <input
+            type="number"
+            name="registrationFee"
+            value={formData.registrationFee}
+            onChange={handleChange}
+            placeholder="0"
+            min="0"
+            step="0.01"
+            className="mt-1 block w-full rounded-md bg-black text-white border border-gray-700 p-2"
+          />
+        </div>
+
+        {/* UPI QR Code */}
+        <div>
+          <label className="block text-sm font-medium text-white">
+            UPI QR Code (Optional)
+          </label>
+          <input
+            type="file"
+            name="upiQrCode"
+            accept="image/*"
+            onChange={handleFileChange}
+            className="mt-1 block w-full rounded-md bg-black text-white border border-gray-700 p-2"
+          />
+        </div>
+
+        {/* Third Party URL */}
+        <div>
+          <label className="block text-sm font-medium text-white">
+            Third Party URL (Optional)
+          </label>
+          <input
+            type="url"
+            name="thirdPartyURL"
+            value={formData.thirdPartyURL}
+            onChange={handleChange}
+            placeholder="https://example.com"
             className="mt-1 block w-full rounded-md bg-black text-white border border-gray-700 p-2"
           />
         </div>
