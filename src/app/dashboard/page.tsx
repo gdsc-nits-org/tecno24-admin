@@ -103,7 +103,7 @@ export default function Dashboard() {
                   </CardContent>
                   <CardDescription>
                     {module.description == " " ? (
-                      <p className="truncate text-red-500">No Description</p>
+                      <p className="truncate text-red-500 text-wrap overflow-hidden">No Description</p>
                     ) : (
                       module.description
                     )}
