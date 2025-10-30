@@ -3,7 +3,6 @@
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -11,9 +10,9 @@ import {
 } from "~/components/ui/table";
 import { Button } from "~/components/ui/button";
 import { useQuery } from '@tanstack/react-query';
-import axios, { AxiosError, AxiosResponse } from "axios";
+import axios, {type  AxiosError } from "axios";
 import { env } from "~/env";
-import { ChangeEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -26,10 +25,9 @@ import { toast } from "sonner";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { auth } from "~/app/utils/firebase";
 import { Spinner } from "~/components/ui/spinner";
-import { User } from "firebase/auth";
+import type { User } from "firebase/auth";
 import { useRouter } from "next/navigation";
-import FuzzySearch from "fuzzy-search"
-import { CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, CommandSeparator, Command } from "~/components/ui/command";
+import { CommandInput, CommandList, CommandEmpty, CommandGroup, CommandItem, Command } from "~/components/ui/command";
 
 export const runtime = "edge";
 
@@ -77,6 +75,7 @@ interface TeamMember {
     phoneNumber: number;
     email: string;
     collegeName: string;
+    registrationId: string;
   };
 }
 
@@ -85,8 +84,8 @@ interface Team {
   teamName: string;
   registrationStatus: string;
   members: TeamMember[];
-  extraInformation: Record<string, []>;
-  eventId: string;
+  transactionId?: string;
+  verificationPhoto?: string;
 }
 
 interface EventParams {
@@ -108,20 +107,15 @@ interface Event {
   posterImage: string;
   maxTeamSize: number;
   minTeamSize: number;
-  attendanceIncentive: number;
-  registrationIncentive: number;
   prizeDescription: string;
   stagesDescription: string;
   description: string;
   venue: string;
-  lat: string;
-  lng: string;
   registrationStartTime: string;
   registrationEndTime: string;
   extraQuestions: string[];
   module: Module;
   organizers: UserResponse[];
-  managers: UserResponse[];
 }
 
 interface GetApiTeam {
@@ -153,7 +147,7 @@ const fetchAllUsers = async (token: string) => {
       }
     });
     return data.msg;
-  } catch (e) {
+  } catch {
     return []
   }
 }
@@ -247,15 +241,17 @@ const Event = ({ params }: { params: EventParams }) => {
 
     const filteredData = teams?.map((team, teamIndex) => {
       if (isSoloEvent) {
-        // Solo event format: Sl No., Name, Mobile Number
+        // Solo event format: Sl No., Name, Mobile Number, Transaction ID, Verification Photo
         const member = team.members[0];
         return {
           "Sl No.": teamIndex + 1,
           "Name": member ? `${member.user.firstName} ${member.user.middleName ? member.user.middleName + ' ' : ''}${member.user.lastName}` : '',
-          "Mobile Number": member?.user.phoneNumber ?? ''
+          "Mobile Number": member?.user.phoneNumber ?? '',
+          "Transaction ID": team.transactionId ?? '',
+          "Payment Verification Photo": team.verificationPhoto ?? ''
         };
       } else {
-        // Group event format: Sl No., Team Name, Team Leader Name, Member 1, Member 2, ..., Mobile Number
+        // Group event format: Sl No., Team Name, Team Leader Name, Member 1, Member 2, ..., Mobile Number, Transaction ID, Verification Photo
         const rowData: Record<string, string | number> = {
           "Sl No.": teamIndex + 1,
           "Team Name": team.teamName,
@@ -267,8 +263,10 @@ const Event = ({ params }: { params: EventParams }) => {
           rowData[`Member ${idx + 1} Name`] = `${member.user.firstName} ${member.user.middleName ? member.user.middleName + ' ' : ''}${member.user.lastName}`;
         });
 
-        // Add team leader's mobile number
+        // Add team leader's mobile number, transaction ID and verification photo
         rowData["Mobile Number of Team Leader"] = team.members[0]?.user.phoneNumber ?? '';
+        rowData["Transaction ID"] = team.transactionId ?? '';
+        rowData["Payment Verification Photo"] = team.verificationPhoto ?? '';
 
         return rowData;
       }
@@ -279,6 +277,7 @@ const Event = ({ params }: { params: EventParams }) => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
+    link.setAttribute('download', `${event?.name}.csv`);
     link.setAttribute('download', `${event?.name}.csv`);
     document.body.appendChild(link);
     link.click();
@@ -330,6 +329,8 @@ const Event = ({ params }: { params: EventParams }) => {
                   <>
                     <TableHead>Name</TableHead>
                     <TableHead>Mobile Number</TableHead>
+                    <TableHead>Transaction ID</TableHead>
+                    <TableHead>Payment Verification Photo</TableHead>
                   </>
                 ) : (
                   <>
@@ -339,6 +340,8 @@ const Event = ({ params }: { params: EventParams }) => {
                       <TableHead key={idx}>Member {idx + 1} Name</TableHead>
                     ))}
                     <TableHead>Team Leader Mobile Number</TableHead>
+                    <TableHead>Transaction ID</TableHead>
+                    <TableHead>Payment Verification Photo</TableHead>
                   </>
                 )}
               </TableRow>
@@ -354,6 +357,14 @@ const Event = ({ params }: { params: EventParams }) => {
                       {team.members[0] ? `${team.members[0].user.firstName} ${team.members[0].user.middleName ? team.members[0].user.middleName + ' ' : ''}${team.members[0].user.lastName}` : ''}
                     </TableCell>
                     <TableCell>{team.members[0]?.user.phoneNumber}</TableCell>
+                    <TableCell>{team.transactionId ?? 'N/A'}</TableCell>
+                    <TableCell>
+                      {team.verificationPhoto ? (
+                        <a href={team.verificationPhoto} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                          View
+                        </a>
+                      ) : 'N/A'}
+                    </TableCell>
                   </>
                 ) : (
                   <>
@@ -367,6 +378,14 @@ const Event = ({ params }: { params: EventParams }) => {
                       </TableCell>
                     ))}
                     <TableCell>{team.members[0]?.user.phoneNumber}</TableCell>
+                    <TableCell>{team.transactionId ?? 'N/A'}</TableCell>
+                    <TableCell>
+                      {team.verificationPhoto ? (
+                        <a href={team.verificationPhoto} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                          View
+                        </a>
+                      ) : 'N/A'}
+                    </TableCell>
                   </>
                 )}
               </TableRow>
