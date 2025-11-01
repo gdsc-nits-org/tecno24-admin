@@ -72,7 +72,7 @@ export default function HomePage() {
     return (
       <main className="flex min-h-screen flex-col items-center justify-center">
         <h1 className="my-2 text-xl">
-          Tecnoesis 2024 Admin Panel. Please Sign In to continue
+          Tecnoesis 2025 Admin Panel. Please Sign In to continue
         </h1>
         <Button variant={"secondary"} onClick={() => signInWithGoogle()}>
           Sign In
