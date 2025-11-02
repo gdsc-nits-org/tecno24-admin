@@ -10,7 +10,7 @@ import {
 } from "~/components/ui/table";
 import { Button } from "~/components/ui/button";
 import { useQuery } from '@tanstack/react-query';
-import axios, {type  AxiosError } from "axios";
+import axios, { type AxiosError } from "axios";
 import { env } from "~/env";
 import { useEffect, useState } from "react";
 import {
@@ -86,6 +86,7 @@ interface Team {
   members: TeamMember[];
   transactionId?: string;
   verificationPhoto?: string;
+  codeforcesID?: string;
 }
 
 interface EventParams {
@@ -249,6 +250,7 @@ const Event = ({ params }: { params: EventParams }) => {
           "Mobile Number": member?.user.phoneNumber ?? '',
           "Transaction ID": team.transactionId ?? '',
           "Payment Verification Photo": team.verificationPhoto ?? ''
+          
         };
       } else {
         // Group event format: Sl No., Team Name, Team Leader Name, Member 1, Member 2, ..., Mobile Number, Transaction ID, Verification Photo
@@ -267,6 +269,7 @@ const Event = ({ params }: { params: EventParams }) => {
         rowData["Mobile Number of Team Leader"] = team.members[0]?.user.phoneNumber ?? '';
         rowData["Transaction ID"] = team.transactionId ?? '';
         rowData["Payment Verification Photo"] = team.verificationPhoto ?? '';
+        rowData["Codeforces ID"] = team.codeforcesID ?? '';
 
         return rowData;
       }
@@ -331,6 +334,7 @@ const Event = ({ params }: { params: EventParams }) => {
                     <TableHead>Mobile Number</TableHead>
                     <TableHead>Transaction ID</TableHead>
                     <TableHead>Payment Verification Photo</TableHead>
+                    <TableHead>Codeforces ID</TableHead>
                   </>
                 ) : (
                   <>
@@ -365,6 +369,7 @@ const Event = ({ params }: { params: EventParams }) => {
                         </a>
                       ) : 'N/A'}
                     </TableCell>
+                    <TableCell>{team.codeforcesID ?? 'N/A'}</TableCell>
                   </>
                 ) : (
                   <>
