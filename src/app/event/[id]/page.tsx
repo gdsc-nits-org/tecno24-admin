@@ -236,7 +236,7 @@ const Event = ({ params }: { params: EventParams }) => {
 
     return csvRows.join('\n');
   };
-
+  console.log(teams)
   const downloadCSV = () => {
     const isSoloEvent = event?.maxTeamSize === 1;
 
